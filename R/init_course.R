@@ -23,27 +23,12 @@ init_course <- function(course_name, loc = ".") {
   }
 
   repo_path <- file.path(loc, course_name)
-  usethis::create_project(path = repo_path, open = TRUE, rstudio = TRUE)
+  usethis::create_project(path = repo_path, open = FALSE, rstudio = TRUE)
 
-  ### set up desired file structure in the new repository
-  ### For static stuff, can we just copy a file structure from the inst/ folder?
-  ### and then create the custom stuff with code
-  # materials
-  #    |------ sections
-  #    |
-  #    |------ images
-  #    |
-  #    |------ data
-  #    |
-  #    |------ style.css
-  #    |
-  #    |------ toc.css
-  #    |
-  #    |------ _quarto.yml
-  #    |
-  #    |------ book.bib
-  #    |
-  #    |------ cover.png
+  ### are there any particular files or folders that should be added at this stage?
 
-  ### initialize as Git repo, or provide instructions to the user to do so; same with github.
+  message("R Project created: ", course_name, " at ", normalizePath(repo_path))
+  message('Recommended next steps: open that project in RStudio, and then:',
+          "\n\u25CF Use `usethis::use_git()` to set up your project as a Git-tracked project, and then...",
+          "\n\u25CF Use `usethis::use_github(organisation = 'nceas-learning-hub')` to connect the project with Github!")
 }
