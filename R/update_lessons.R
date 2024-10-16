@@ -25,4 +25,15 @@ update_lessons <- function(lessons = "all", version = NULL) {
   ### is there a way to track which lessons are custom (and not update those)?
   ### * maybe locally, make a copy with a different name?
   ### * if filename doesn't match an "official" lesson then it won't get updated (with a warning)
+
+
+  ### resolve version (separate non-exported function):
+  ### * figure out type of version by context
+  ### * resolve it to some common currency of version (a commit hash is most fine-grained I think)
+  ### * compare requested version to current version
+  ### * return "current" or commit hash
+
+  ### if version is not current, install coreRlessons from requested version
+  ### identify lessons to be updated - which match the names in coreRlessons at this version
+  ### copy over into sections folder, overwriting old versions
 }
