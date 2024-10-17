@@ -3,3 +3,4 @@
 export(get_qmd)
 export(init_course)
 export(setup_lessons)
+export(update_lessons)
