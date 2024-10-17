@@ -12,8 +12,12 @@ setup_lessons(lessons, overwrite = FALSE)
 \item{overwrite}{If there is already an existing lessons structure, and overwrite == FALSE, will return an error.  If the user wishes to create a new lesson structure, then overwrite == FALSE will remove the existing structure and create a new structure based on the lesson names.}
 }
 \description{
-Set up a schedule of course lessons
+Create the structure necessary to implement an ordered set of lessons in the Quarto book format.
+The user provides a character vector of lesson names (filenames, bare or with \code{.qmd} extension);
+these and associated materials (images, data) are copied from \code{coreRlessons} package into the
+course project (created with \code{init_course()}).  Sets up the index.qmd, _quarto.yml, and some
+additional files.
 }
 \examples{
-# setup_lessons('git-github-intro', 'r-creating-functions.qmd')
+\dontrun{setup_lessons(lessons = c('github_introduction', 'r_functions.qmd')}
 }
