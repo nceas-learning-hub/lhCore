@@ -126,8 +126,7 @@ copy_lessons <- function(from, to, lessons, directory = FALSE) {
 
 
 create_session_file <- function(lesson, id, overwrite) {
-  ### set up a session file for a single lesson: update the include field,
-  ### and update the title field by pulling the title from the lesson qmd.
+  ### set up a session file for a single lesson: update the include field
   session_template <- system.file('course_files', 'session_template.qmd', package = 'coreR')
   session_file <- here::here(sprintf('session_%02d.qmd', id))
 
@@ -138,7 +137,6 @@ create_session_file <- function(lesson, id, overwrite) {
   if(!file.exists(session_file) | overwrite) {
     file.copy(session_template, session_file)
     update_session_include(lesson, session_file)
-    update_session_title(lesson, session_file)
   }
 
   return(session_file)
@@ -151,26 +149,6 @@ update_session_include <- function(lesson, session_file) {
   return(readr::write_file(session_txt_out, session_file))
 }
 
-update_session_title <- function(lesson, session_file) {
-  ### WHERE DO THE TITLES COME FROM????!!!???
-  ### * Idea: in the lesson yaml header, include a `lesson_title` field
-  ###    * since `lesson_title` is not recognized by Quarto it looks like it is ignored;
-  ###    * perhaps we can include other metadata up there too, like author, date, etc...
-  lesson_text <- readr::read_delim(here::here('lessons', lesson),
-                                   delim = '\\n', col_names = FALSE, show_col_types = FALSE)
-  lesson_title <- lesson_text$X1[stringr::str_detect(lesson_text$X1, 'lesson_title')] |>
-    stringr::str_remove('.+:') |>
-    stringr::str_squish()
-
-  if(length(lesson_title) == 1) {
-    session_txt <- readr::read_file(session_file)
-    session_txt_out <- stringr::str_replace(session_txt, 'LESSON TITLE', lesson_title)
-    return(readr::write_file(session_txt_out, session_file))
-  } else {
-    warning('Lesson title not found for lesson ', lesson)
-    return(FALSE)
-  }
-}
 
 create_quarto_yml <- function(lessons, version, overwrite = FALSE) {
   quarto_yml_template <- system.file('course_files', '_quarto_template.yml', package = 'coreR')
