@@ -19,21 +19,6 @@
 #' \dontrun{setup_lessons(lessons = available_lessons()$lesson[1:8])}
 #' @export
 setup_lessons <- function(lessons, overwrite = FALSE) {
-  ### This will set up the lesson structure
-  ### - take in a vector of lesson names in order
-  ### - populate the quarto.yaml
-  ### - copy the lessons from the package materials into the project directory
-  ### - create the session_01.qmd etc files in the right spot, linked to the the lessons
-  ### maybe a usethis-style "do you want to commit the files?" query
-  ###
-  ### If the user wishes to create a new structure in an existing course, maybe a flag for
-  ### overwriting the existing structure, or a usethis-style "are you sure?"
-  ### - delete the existing structure and start over
-
-  ### Check that you're in a legit coreR course directory!  how to check for this?
-  ### * dummy file?
-  ### * something in the description or README.md?
-  ### * get the root directory of the coreR course - here::here()?
 
   ### make sure coreRlessons package is installed
   installed <- as.data.frame(installed.packages())
@@ -145,7 +130,7 @@ create_session_file <- function(lesson, id, overwrite) {
 update_session_include <- function(lesson, session_file) {
   session_txt <- readr::read_file(session_file)
   include_path <- file.path('/lessons', lesson)
-  session_txt_out <- stringr::str_replace(session_txt, 'LESSON FILE', include_path)
+  session_txt_out <- stringr::str_replace(session_txt, 'LESSON_FILE', include_path)
   return(readr::write_file(session_txt_out, session_file))
 }
 

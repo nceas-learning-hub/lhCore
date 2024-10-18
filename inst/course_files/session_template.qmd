@@ -5,4 +5,4 @@ format:
     code-overflow: wrap
 ---
 
-{{< include LESSON FILE >}}
+{{< include LESSON_FILE >}}
