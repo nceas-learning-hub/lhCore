@@ -7,8 +7,8 @@
 available_lessons(lessons = NULL)
 }
 \arguments{
-\item{lessons}{An optional character vector to query whether specific lessons
-are available}
+\item{lessons}{An optional character vector of lessons to query whether
+specific lessons are available}
 }
 \value{
 A data frame containing the file names (.qmd) of all (or selected)

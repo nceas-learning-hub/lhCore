@@ -12,7 +12,11 @@
 #' @return NULL
 #'
 #' @examples
-#' \dontrun{setup_lessons(lessons = c('github_introduction', 'r_functions.qmd')}
+#' \dontrun{setup_lessons(lessons = c('activity_reproducibility_lego',
+#'                                    'lecture_tidy_data.qmd',
+#'                                    'github_collaboration',
+#'                                    'r_functions.qmd'))}
+#' \dontrun{setup_lessons(lessons = available_lessons()$lesson[1:8])}
 #' @export
 setup_lessons <- function(lessons, overwrite = FALSE) {
   ### This will set up the lesson structure
@@ -42,7 +46,7 @@ setup_lessons <- function(lessons, overwrite = FALSE) {
   message('Installing lessons from coreRlessons, version ', coreRlessons_vrs, '...')
 
   ### convert lessons vec into qmd filenames
-  # lessons <- c('activity_reproducibility_lego', 'lecture_tidy_data.qmd', 'github_collaboration', 'r_functions.qmd')
+  #
   lessons_qmd <- stringr::str_detect(lessons, '\\.qmd$')
   if(any(!lessons_qmd)) {
     message('  Appending .qmd to bare filenames in lessons vector...')
@@ -50,19 +54,19 @@ setup_lessons <- function(lessons, overwrite = FALSE) {
   }
 
   ### check that all lessons are in coreRlessons
-  lessons_available <- list.files(system.file('lessons', package = 'coreRlessons'), full.names = TRUE)
+  lessons_available <- available_lessons()$lesson_file
   lessons_missing <- lessons[!lessons %in% basename(lessons_available)]
   if(length(lessons_missing) > 0) stop("Some lessons are not found in the coreRlessons package:",
                                        paste0("\n\u25CF ", lessons_missing))
 
 
   ### copy over files from coreRlessons to current project: lessons, images, data
-  copy_lessons(dir_name = 'lessons', lessons, directory = FALSE)
-  copy_lessons(dir_name = 'lesson_img', lessons, directory = TRUE)
-  copy_lessons(dir_name = 'lesson_data', lessons, directory = TRUE)
+  copy_lessons(from = 'lessons',       to = 'lessons', lessons, directory = FALSE)
+  copy_lessons(from = 'lesson_images', to = 'images',   lessons, directory = TRUE)
+  copy_lessons(from = 'lesson_data',   to = 'data',    lessons, directory = TRUE)
 
-  ### create session_XX.qmd etc in materials (delete old first, in case of high numbers)
-  session_fs <- list.files('materials', pattern = 'session_.+.qmd', full.names = TRUE)
+  ### create session_XX.qmd etc in root (delete old first, in case of high numbers)
+  session_fs <- list.files(here::here(), pattern = 'session_.+.qmd', full.names = TRUE)
   if(length(session_fs) > 0 & !overwrite) {
     stop('There are existing session files - if you want to overwrite, set overwrite = TRUE')
   } else {
@@ -88,21 +92,24 @@ setup_lessons <- function(lessons, overwrite = FALSE) {
   ### Other files needed to create the book
   addl_filenames <- c('book.bib', 'cover.png', 'style.css', 'toc.css')
   addl_sys_files <- system.file('course_files', addl_filenames, package = 'coreR')
-  file.copy(addl_sys_files, file.path('materials', addl_filenames))
+  file.copy(addl_sys_files, here::here(addl_filenames))
 
+  message('Course populated with lessons!  Refresh the file pane to see the
+          course documentation.\n')
+  message('To render the book, restart RStudio to activate the Build tab.')
 }
 
 ### not exported!
 
-copy_lessons <- function(dir_name, lessons, directory = FALSE) {
-  ### dir_name is the directory to copy lessons from;
+copy_lessons <- function(from, to, lessons, directory = FALSE) {
+  ### from is the directory to copy lessons from (inside the coreRlessons package);
+  ### to is the directory to copy the lessons to (inside the course repository)
   ### lessons is the list of lesson filenames;
   ### directory = FALSE for qmds, TRUE for image folder, data folder, etc.
   if(!is.logical(directory)) stop('The directory argument must be TRUE or FALSE - are you copying a directory?')
 
-  ### create materials directory and subdir as needed
-  if(!dir.exists("materials")) dir.create("materials")
-  subfolder <- file.path("materials", dir_name)
+  ### create subfolder as needed
+  subfolder <- here::here(to)
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
   ### copy over folders and files from coreRlessons to current project
@@ -110,7 +117,7 @@ copy_lessons <- function(dir_name, lessons, directory = FALSE) {
     fs <- stringr::str_remove(lessons, '.qmd$')
   } else fs <- lessons
 
-  fs_available <- list.files(system.file(dir_name, package = 'coreRlessons'), full.names = TRUE)
+  fs_available <- list.files(system.file(from, package = 'coreRlessons'), full.names = TRUE)
   fs_to_copy <- fs_available[basename(fs_available) %in% fs]
   if(length(fs_to_copy) > 0) {
     file.copy(fs_to_copy, subfolder, recursive = directory)
@@ -122,7 +129,7 @@ create_session_file <- function(lesson, id, overwrite) {
   ### set up a session file for a single lesson: update the include field,
   ### and update the title field by pulling the title from the lesson qmd.
   session_template <- system.file('course_files', 'session_template.qmd', package = 'coreR')
-  session_file <- file.path('materials', sprintf('session_%02d.qmd', id))
+  session_file <- here::here(sprintf('session_%02d.qmd', id))
 
   if(!overwrite & file.exists(session_file)) {
     warning('File exists: ', session_file, ' but overwrite is FALSE - session file not updated')
@@ -149,7 +156,7 @@ update_session_title <- function(lesson, session_file) {
   ### * Idea: in the lesson yaml header, include a `lesson_title` field
   ###    * since `lesson_title` is not recognized by Quarto it looks like it is ignored;
   ###    * perhaps we can include other metadata up there too, like author, date, etc...
-  lesson_text <- readr::read_delim(file.path('materials/lessons', lesson),
+  lesson_text <- readr::read_delim(here::here('lessons', lesson),
                                    delim = '\\n', col_names = FALSE, show_col_types = FALSE)
   lesson_title <- lesson_text$X1[stringr::str_detect(lesson_text$X1, 'lesson_title')] |>
     stringr::str_remove('.+:') |>
@@ -167,7 +174,7 @@ update_session_title <- function(lesson, session_file) {
 
 create_quarto_yml <- function(lessons, version, overwrite = FALSE) {
   quarto_yml_template <- system.file('course_files', '_quarto_template.yml', package = 'coreR')
-  quarto_yml_file <- file.path('materials', '_quarto.yml')
+  quarto_yml_file <- here::here('_quarto.yml')
 
   if(!overwrite & file.exists(quarto_yml_file)) {
     stop('File exists: ', quarto_yml_file, ' but overwrite is FALSE - _quarto.yml file not updated')
@@ -213,7 +220,7 @@ get_course_metadata<- function() {
 
 create_index_qmd <- function(overwrite = FALSE) {
   index_template <- system.file('course_files', 'index_template.qmd', package = 'coreR')
-  index_file <- file.path('materials', 'index.qmd')
+  index_file <- here::here('index.qmd')
   if(!overwrite & file.exists(index_file)) {
     stop('File exists: ', index_file, ' but overwrite is FALSE - index.qmd file not updated')
   }

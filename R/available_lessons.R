@@ -1,7 +1,7 @@
 #' Get a dataframe of available lessons
 #'
-#' @param lessons An optional character vector to query whether specific lessons
-#'     are available
+#' @param lessons An optional character vector of lessons to query whether
+#'     specific lessons are available
 #'
 #' @return A data frame containing the file names (.qmd) of all (or selected)
 #'     lessons from the coreRlessons package.  Eventually, including file title, date, and
@@ -13,8 +13,6 @@
 available_lessons <- function(lessons = NULL) {
   v <- packageVersion('coreRlessons') |> paste(collapse = '.')
   message('Retrieving available lessons from coreRlessons version ', v)
-
-  l_cln <- stringr::str_remove(lessons, '..md$') ### drop qmd or rmd extension
 
   l_vec <- list.files(system.file('lessons', package = 'coreRlessons'),
                       full.names = TRUE)
