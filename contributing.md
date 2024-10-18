@@ -8,11 +8,11 @@
 
 [3. Getting started](#3-getting-started)
 
-[4. Fixing a bug or contributing to a lesson or files](#4-fixing-a-bug-or-contributing-to-a-lesson-or-files)
+[4. Fixing a bug in `coreR`](#4-fixing-a-bug-in-corer)
 
-[5. Adding a training event](#5-adding-a-training-event)
+[5. Contributing or modifying a lesson to `coreRlessons`](#5-contributing-or-modifying-a-lesson-to-corerlessons)
 
-[6. Syncing your forked repository with the upstream repository](#6-syncing-your-forked-repository-with-the-upstream-repository)
+[6. Adding a course](#6-adding-a-course)
 
 [7. Materials Development Workflow](#7-materials-development-workflow)
 
@@ -95,7 +95,7 @@ planned lesson, or add a comment to an existing issue.
 See further details in the [`coreRlessons` contributing document](https://github.com/nceas-learning-hub/coreRlessons/blob/main/contributing.md).
 
 
-## 5. Adding a course
+## 6. Adding a course
 
 Course materials are contained in repositories in the `nceas-learning-hub` Github
 Organization.  The functionality of the `coreR` package sets up the structure of
