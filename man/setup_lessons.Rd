@@ -19,9 +19,9 @@ course project (created with \code{init_course()}).  Sets up the index.qmd, _qua
 additional files.
 }
 \examples{
-\dontrun{setup_lessons(lessons = c('activity_reproducibility_lego',
-                                   'lecture_tidy_data.qmd',
-                                   'github_collaboration',
-                                   'r_functions.qmd'))}
+\dontrun{setup_lessons(lessons = c("activity_reproducibility_lego",
+                                   "lecture_tidy_data.qmd",
+                                   "github_collaboration",
+                                   "r_functions.qmd"))}
 \dontrun{setup_lessons(lessons = available_lessons()$lesson[1:8])}
 }
