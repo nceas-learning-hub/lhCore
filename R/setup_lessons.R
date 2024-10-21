@@ -76,12 +76,15 @@ setup_lessons <- function(lessons, overwrite = FALSE) {
 
   ### Other files needed to create the book
   addl_filenames <- c('book.bib', 'cover.png', 'style.css', 'toc.css')
-  addl_sys_files <- system.file('course_files', addl_filenames, package = 'coreR')
+  addl_sys_files <- system.file('course_files', addl_filenames, package = 'coreRlessons')
   file.copy(addl_sys_files, here::here(addl_filenames))
 
   message('Course populated with lessons!  Refresh the file pane to see the
-          course documentation.\n')
-  message('To render the book, restart RStudio to activate the Build tab.')
+          course files and folders.\n')
+
+  message('To render the course book, restart RStudio to activate the Build tab.')
+  message('To set up Git/GitHub for this course, run `gitify()`')
+
 }
 
 ### not exported!
@@ -112,7 +115,7 @@ copy_lessons <- function(from, to, lessons, directory = FALSE) {
 
 create_session_file <- function(lesson, id, overwrite) {
   ### set up a session file for a single lesson: update the include field
-  session_template <- system.file('course_files', 'session_template.qmd', package = 'coreR')
+  session_template <- system.file('course_files', 'session_template.qmd', package = 'coreRlessons')
   session_file <- here::here(sprintf('session_%02d.qmd', id))
 
   if(!overwrite & file.exists(session_file)) {
@@ -136,7 +139,7 @@ update_session_include <- function(lesson, session_file) {
 
 
 create_quarto_yml <- function(lessons, version, overwrite = FALSE) {
-  quarto_yml_template <- system.file('course_files', '_quarto_template.yml', package = 'coreR')
+  quarto_yml_template <- system.file('course_files', '_quarto_template.yml', package = 'coreRlessons')
   quarto_yml_file <- here::here('_quarto.yml')
 
   if(!overwrite & file.exists(quarto_yml_file)) {
@@ -182,7 +185,7 @@ get_course_metadata<- function() {
 }
 
 create_index_qmd <- function(overwrite = FALSE) {
-  index_template <- system.file('course_files', 'index_template.qmd', package = 'coreR')
+  index_template <- system.file('course_files', 'index_template.qmd', package = 'coreRlessons')
   index_file <- here::here('index.qmd')
   if(!overwrite & file.exists(index_file)) {
     stop('File exists: ', index_file, ' but overwrite is FALSE - index.qmd file not updated')
