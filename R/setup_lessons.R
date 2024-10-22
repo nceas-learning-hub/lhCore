@@ -42,7 +42,7 @@
 setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
 
   ### Query lesson version (checks to ensure lessons package is installed!)
-  v <- get_lessons_version()
+  v <- get_lessons_version(quiet = TRUE)
   message("Installing lessons from coreRlessons, version ", v, "...")
 
   ### If lessons provided as data.frame, break into separate lesson and module vectors

@@ -65,11 +65,11 @@ init_course <- function(course_proj,
   cat(metadata_txt, '\n\n')
 
   message('Recommended next steps: open the new project in RStudio, and then:',
-          "\n  \u25CF Use `coreR::available_lessons()` to see the lesson catalog from coreRlessons",
-          "\n  \u25CF Use `coreR::setup_lessons(<lessons>)` to install the lessons in the course",
-          "\n  \u25CF Use `usethis::use_git()` to set up your project as a Git-tracked project, and then...",
-          "\n  \u25CF Use `usethis::use_github(organisation = '", course_org,
+          "\n  \u2022 Use `coreR::available_lessons()` to see the lesson catalog from coreRlessons",
+          "\n  \u2022 Use `coreR::setup_lessons(<lessons>)` to install the lessons in the course",
+          "\n  \u2022 Use `usethis::use_git()` to set up your project as a Git-tracked project, and then...",
+          "\n  \u2022 Use `usethis::use_github(organisation = '", course_org,
           "')` to connect the project with Github!\n")
-  open_proj <- readline('Do you wish to open the new project in RStudio? (y/n)')
+  open_proj <- readline('Do you wish to open the new project in RStudio? (y/n) ')
   if(tolower(open_proj) == 'y') usethis::proj_activate(repo_path)
 }

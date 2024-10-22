@@ -4,7 +4,7 @@
 \alias{get_lessons_version}
 \title{Query the version of the lessons package}
 \usage{
-get_lessons_version(pkg = "coreRlessons")
+get_lessons_version(pkg = "coreRlessons", quiet = FALSE)
 }
 \arguments{
 \item{pkg}{The name of the lessons package (e.g., "coreRlessons")}

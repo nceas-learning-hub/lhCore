@@ -3,5 +3,6 @@
 export(available_lessons)
 export(get_lessons_version)
 export(init_course)
+export(search_lessons)
 export(setup_lessons)
 export(update_lessons)
