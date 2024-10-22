@@ -4,11 +4,13 @@
 \alias{available_lessons}
 \title{Get a dataframe of available lessons}
 \usage{
-available_lessons(lessons = NULL)
+available_lessons(lessons = NULL, pkg = "coreRlessons")
 }
 \arguments{
 \item{lessons}{An optional character vector of lessons to query whether
 specific lessons are available}
+
+\item{pkg}{The package to query for lesson availability (default \code{coreRlessons})}
 }
 \value{
 A data frame containing the file names (.qmd) of all (or selected)

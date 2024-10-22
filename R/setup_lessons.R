@@ -6,32 +6,60 @@
 #' course project (created with `init_course()`).  Sets up the index.qmd, _quarto.yml, and some
 #' additional files.
 #'
-#' @param lessons A character vector containing the names (bare or .qmd extension) of the lessons, in order.
-#' @param overwrite If there is already an existing lessons structure, and overwrite == FALSE, will return an error.  If the user wishes to create a new lesson structure, then overwrite == FALSE will remove the existing structure and create a new structure based on the lesson names.
+#' @param lessons Information on the lessons to be included in the course, as a
+#'     character vector or data.frame.  A character vector containing the names
+#'     (bare or .qmd extension) of the lessons, in order; optionally, a named
+#'     character vector where the names are course modules (e.g., "Day 1", "Day 2").
+#'     Alternately, a data.frame with columns "module" and "lesson", similar to the
+#'     named character vector.
+#' @param modules An additional way to provide module information for the lessons:
+#'     a vector of module names that matches the length of the lessons vector. Caution:
+#'     if `modules` is not NULL, and module names are provided directly in `lessons`,
+#'     this argument will take precedence.
+#' @param overwrite If there is already an existing lessons structure, and
+#'     `overwrite = FALSE`, will return an error.  If the user wishes to create
+#'     a new lesson structure, then `overwrite = TRUE` will remove the existing
+#'     structure in its entirety and create a new structure based on the lesson names.
 #'
 #' @return NULL
 #'
 #' @examples
-#' \dontrun{setup_lessons(lessons = c("activity_reproducibility_lego",
-#'                                    "lecture_tidy_data.qmd",
-#'                                    "github_collaboration",
-#'                                    "r_functions.qmd"))}
-#' \dontrun{setup_lessons(lessons = available_lessons()$lesson[1:8])}
+#' \dontrun{
+#' setup_lessons(lessons = c("activity_reproducibility_lego",
+#'                           "lecture_tidy_data.qmd",
+#'                           "github_collaboration",
+#'                           "r_functions.qmd"))
+#' ### modules as named vector
+#' lesson_mods <- available_lessons()$lesson[1:6] |> setNames(c(1, 1, 2, 2, 3, 3))
+#' setup_lessons(lessons = lesson_mods)
+#'
+#' ### modules as argument
+#' setup_lessons(lessons = available_lessons()$lesson[1:6],
+#'               modules = rep(c("day 1", "day 2"), each = 3))
+#' }
 #' @export
-setup_lessons <- function(lessons, overwrite = FALSE) {
 
-  ### make sure coreRlessons package is installed
-  installed <- as.data.frame(installed.packages())
-  coreRlessons_pkg <- installed[installed$Package == "coreRlessons", ]
-  if(nrow(coreRlessons_pkg) == 0) {
-    stop("Please install coreRlessons package: remotes::install_github(\"nceas-learning-hub/coreRlessons\")")
+setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
+
+  ### Query lesson version (checks to ensure lessons package is installed!)
+  v <- get_lessons_version()
+  message("Installing lessons from coreRlessons, version ", v, "...")
+
+  ### If lessons provided as data.frame, break into separate lesson and module vectors
+  if(any(class(lessons) == "data.frame")) {
+    modules <- lessons$module
+    lessons <- lessons$lesson
+  }
+  ### If lessons provided as a named vector, break into separate lesson and module vectors
+  ### because names are a fragile attribute...
+  if(!is.null(names(lessons))) {
+    modules <- names(lessons)
+  }
+  if(!is.null(modules)) {
+    if(length(modules) != length(lessons)) stop('Length of lessons and modules must match!')
   }
 
-  coreRlessons_vrs <- coreRlessons_pkg$Version
-  message("Installing lessons from coreRlessons, version ", coreRlessons_vrs, "...")
-
   ### convert lessons vec into qmd filenames
-  #
   lessons_qmd <- stringr::str_detect(lessons, "\\.qmd$")
   if(any(!lessons_qmd)) {
     message("  Appending .qmd to bare filenames in lessons vector...")
@@ -46,30 +74,17 @@ setup_lessons <- function(lessons, overwrite = FALSE) {
 
 
   ### copy over files from coreRlessons to current project: lessons, images, data
-  copy_lessons(from = "lessons",       to = "lessons", lessons, directory = FALSE)
-  copy_lessons(from = "lesson_images", to = "images",   lessons, directory = TRUE)
-  copy_lessons(from = "lesson_data",   to = "data",    lessons, directory = TRUE)
+  lesson_prefix <- "s" ### appends sXX_ to start of lesson filenames
+  copy_lessons(lessons, from = "lessons", to = ".", prefix = lesson_prefix)
+  copy_folders(lessons, from = "lesson_images", to = "images")
+  copy_folders(lessons, from = "lesson_data",   to = "data")
 
-  ### create session_XX.qmd etc in root (delete old first, in case of high numbers)
-  session_fs <- list.files(here::here(), pattern = "session_.+.qmd", full.names = TRUE)
-  if(length(session_fs) > 0 & !overwrite) {
-    stop("There are existing session files - if you want to overwrite, set overwrite = TRUE")
-  } else {
-    unlink(session_fs)
-  }
-
-  for(id in 1:length(lessons)) {
-    ### id <- 2
-    lesson <- lessons[id]
-    create_session_file(lesson, id, overwrite)
-  }
+  ### create _quarto.yml - including links to sessions, course metadata, etc
+  create_quarto_yml(lessons, modules, prefix = lesson_prefix, overwrite)
 
   ################################
   ### set up additional files! ###
   ################################
-
-  ### create _quarto.yml - including links to sessions, course metadata, etc
-  create_quarto_yml(lessons, version = coreRlessons_vrs, overwrite)
 
   ### create index.qmd - with description from metadata
   create_index_qmd(overwrite)
@@ -85,63 +100,64 @@ setup_lessons <- function(lessons, overwrite = FALSE) {
   message("To render the course book, restart RStudio to activate the Build tab.")
   message("To set up Git/GitHub for this course:",
           "\n  \u25CF Use `usethis::use_git()` to set up your project as a Git-tracked project, and then...",
-          "\n  \u25CF Use `usethis::use_github(organisation = '", course_org,
-          "')` to connect the project with Github!\n")
+          "\n  \u25CF Use `usethis::use_github(organisation = 'nceas-learning-hub')` to connect the project with Github!\n")
 
 }
 
 ### not exported!
 
-copy_lessons <- function(from, to, lessons, directory = FALSE) {
+copy_lessons <- function(lessons, from, to = ".", prefix = "s") {
   ### from is the directory to copy lessons from (inside the coreRlessons package);
   ### to is the directory to copy the lessons to (inside the course repository)
-  ### lessons is the list of lesson filenames;
-  ### directory = FALSE for qmds, TRUE for image folder, data folder, etc.
-  if(!is.logical(directory)) stop("The directory argument must be TRUE or FALSE - are you copying a directory?")
+  ### lessons is the list of lesson filenames
+  ### prefix is appended to the start of the filename to sort in order (default "s" for session)
 
   ### create subfolder as needed
   subfolder <- here::here(to)
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
-  ### copy over folders and files from coreRlessons to current project
-  if(directory) {
-    fs <- stringr::str_remove(lessons, ".qmd$")
-  } else fs <- lessons
+  ### copy over files from coreRlessons to current project
+
+  fs_available <- list.files(system.file(from, package = "coreRlessons"), full.names = TRUE)
+
+  fs_to_copy <- fs_available[basename(fs_available) %in% lessons]
+
+  ### This error check is probably redundant!
+  if(length(fs_to_copy) != length(lessons)) {
+    stop("Not all lessons available to copy!  Lessons requested:",
+         paste("\n\u25CF", lessons), "\nLessons available to copy:",
+         paste("\n\u25CF", fs_to_copy))
+  }
+
+  fs_out <- sprintf('%s/%s%02d_%s', subfolder, prefix, 1:length(lessons), lessons)
+
+  if(length(fs_to_copy) > 0) {
+    file.copy(fs_to_copy, fs_out)
+  }
+}
+
+copy_folders <- function(lessons, from, to) {
+  ### from is the directory to copy lessons from (inside the coreRlessons package);
+  ### to is the directory to copy the lessons to (inside the course repository)
+  ### lessons is the list of lesson filenames;
+
+  ### create subfolder as needed
+  subfolder <- here::here(to)
+  if(!dir.exists(subfolder)) dir.create(subfolder)
+
+  ### copy over folders and files from coreRlessons to current project - strip
+  ### the .qmd from the lesson names, to look for the folder names
+  fs <- stringr::str_remove(lessons, ".qmd$")
 
   fs_available <- list.files(system.file(from, package = "coreRlessons"), full.names = TRUE)
   fs_to_copy <- fs_available[basename(fs_available) %in% fs]
   if(length(fs_to_copy) > 0) {
-    file.copy(fs_to_copy, subfolder, recursive = directory)
+    file.copy(fs_to_copy, subfolder, recursive = TRUE)
   }
 }
 
 
-create_session_file <- function(lesson, id, overwrite) {
-  ### set up a session file for a single lesson: update the include field
-  session_template <- system.file("course_files", "session_template.qmd", package = "coreRlessons")
-  session_file <- here::here(sprintf("session_%02d.qmd", id))
-
-  if(!overwrite & file.exists(session_file)) {
-    warning("File exists: ", session_file, " but overwrite is FALSE - session file not updated")
-  }
-
-  if(!file.exists(session_file) | overwrite) {
-    file.copy(session_template, session_file)
-    update_session_include(lesson, session_file)
-  }
-
-  return(session_file)
-}
-
-update_session_include <- function(lesson, session_file) {
-  session_txt <- readr::read_file(session_file)
-  include_path <- file.path("/lessons", lesson)
-  session_txt_out <- stringr::str_replace(session_txt, "LESSON_FILE", include_path)
-  return(readr::write_file(session_txt_out, session_file))
-}
-
-
-create_quarto_yml <- function(lessons, version, overwrite = FALSE) {
+create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE) {
   quarto_yml_template <- system.file("course_files", "_quarto_template.yml", package = "coreRlessons")
   quarto_yml_file <- here::here("_quarto.yml")
 
@@ -156,24 +172,53 @@ create_quarto_yml <- function(lessons, version, overwrite = FALSE) {
   meta <- get_course_metadata()
   course_url <- file.path("https://github.com", meta["course_org"], meta["course_proj"])
 
-  ### define session list
-  sessions_vec <- sprintf("session_%02d.qmd", 1:length(lessons))
-  lessons_name_vec <- stringr::str_remove(lessons, ".qmd") |>
-    stringr::str_replace_all("[^a-z0-9]+", " ") |>
-    stringr::str_replace(" ", ": ")
-  ses_les_vec <- sprintf("    - %s  ### %s   (coreRlessons v%s)",
-                         sessions_vec, lessons_name_vec, version) |>
-    paste(collapse = "\n")
+  ### define lesson list
+  lesson_txt <- define_lesson_txt(lessons, modules, prefix)
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- readr::read_file(quarto_yml_file) |>
     stringr::str_replace("COURSE_TITLE", meta["title"]) |>
     stringr::str_replace("COURSE_DATES", paste(meta["start_date"], "-", meta["end_date"])) |>
     stringr::str_replace("COURSE_URL", course_url) |>
-    stringr::str_replace(" *SESSION_LINKS", ses_les_vec)
+    stringr::str_replace(" *SESSION_LINKS", lesson_txt)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, quarto_yml_file)
+}
+
+define_lesson_txt <- function(lessons, modules, prefix) {
+  v <- get_lessons_version()
+  if(is.null(modules)) {
+    ### if lessons is not a named vector, simple case
+    lesson_txt <- sprintf("    - %s%02d_%s  ###  (coreRlessons v%s)",
+                           prefix, 1:length(lessons), lessons, v) |>
+      paste(collapse = "\n")
+  } else {
+    message("Module names detected...")
+    ### if lessons is a named vector, break into modules by name
+    mod_names <- unique(modules) ### keep in order
+    mod_vec <- mod_names |> setNames(mod_names)
+
+    ### prefix and number the lessons first; attach module names
+    lsn_path <- sprintf('%s%02d_%s', prefix, 1:length(lessons), lessons) |>
+      setNames(names(lessons))
+
+    ### loop over modules to create a unique set for each, with part and chapter
+    for(mod in mod_names) {
+      # mod <- mod_names[2]
+      mod_lsns <- lsn_path[modules == mod]
+      mod_lsn_vec <- sprintf("      - %s  ###  (coreRlessons v%s)",
+                             mod_lsns, v) |>
+        paste(collapse = "\n")
+      mod_txt <- sprintf("    - part: \"%s\"\n      chapters:\n%s",
+                         mod, mod_lsn_vec)
+      mod_vec[mod] <- mod_txt
+    }
+
+    lesson_txt <- paste(mod_vec, collapse = "\n")
+  }
+
+  return(lesson_txt)
 }
 
 get_course_metadata<- function() {

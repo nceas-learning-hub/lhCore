@@ -2,6 +2,7 @@
 #'
 #' @param lessons An optional character vector of lessons to query whether
 #'     specific lessons are available
+#' @param pkg The package to query for lesson availability (default `coreRlessons`)
 #'
 #' @return A data frame containing the file names (.qmd) of all (or selected)
 #'     lessons from the coreRlessons package.  Eventually, including file title, date, and

@@ -4,12 +4,25 @@
 \alias{setup_lessons}
 \title{Set up a schedule of course lessons}
 \usage{
-setup_lessons(lessons, overwrite = FALSE)
+setup_lessons(lessons, modules = NULL, overwrite = FALSE)
 }
 \arguments{
-\item{lessons}{A character vector containing the names (bare or .qmd extension) of the lessons, in order.}
+\item{lessons}{Information on the lessons to be included in the course, as a
+character vector or data.frame.  A character vector containing the names
+(bare or .qmd extension) of the lessons, in order; optionally, a named
+character vector where the names are course modules (e.g., "Day 1", "Day 2").
+Alternately, a data.frame with columns "module" and "lesson", similar to the
+named character vector.}
 
-\item{overwrite}{If there is already an existing lessons structure, and overwrite == FALSE, will return an error.  If the user wishes to create a new lesson structure, then overwrite == FALSE will remove the existing structure and create a new structure based on the lesson names.}
+\item{modules}{An additional way to provide module information for the lessons:
+a vector of module names that matches the length of the lessons vector. Caution:
+if \code{modules} is not NULL, and module names are provided directly in \code{lessons},
+this argument will take precedence.}
+
+\item{overwrite}{If there is already an existing lessons structure, and
+\code{overwrite = FALSE}, will return an error.  If the user wishes to create
+a new lesson structure, then \code{overwrite = TRUE} will remove the existing
+structure in its entirety and create a new structure based on the lesson names.}
 }
 \description{
 Create the structure necessary to implement an ordered set of lessons in the Quarto book format.
@@ -19,9 +32,17 @@ course project (created with \code{init_course()}).  Sets up the index.qmd, _qua
 additional files.
 }
 \examples{
-\dontrun{setup_lessons(lessons = c("activity_reproducibility_lego",
-                                   "lecture_tidy_data.qmd",
-                                   "github_collaboration",
-                                   "r_functions.qmd"))}
-\dontrun{setup_lessons(lessons = available_lessons()$lesson[1:8])}
+\dontrun{
+setup_lessons(lessons = c("activity_reproducibility_lego",
+                          "lecture_tidy_data.qmd",
+                          "github_collaboration",
+                          "r_functions.qmd"))
+### modules as named vector
+lesson_mods <- available_lessons()$lesson[1:6] |> setNames(c(1, 1, 2, 2, 3, 3))
+setup_lessons(lessons = lesson_mods)
+
+### modules as argument
+setup_lessons(lessons = available_lessons()$lesson[1:6],
+              modules = rep(c("day 1", "day 2"), each = 3))
+}
 }
