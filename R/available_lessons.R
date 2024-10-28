@@ -26,8 +26,10 @@ available_lessons <- function(lessons = NULL, pkg = 'coreRlessons') {
     missing <- l_cln[!l_cln %in% l_df$lesson]
     ### filter dataframe to user-provided lessons only
     l_df <- l_df[l_df$lesson %in% l_cln, ]
-    warning('Note: the following lessons are not available in ', pkg, ' version ', v,
-            paste('\n  \u2022', missing))
+    if(length(missing) > 0) {
+      warning('Note: the following lessons are not available in ', pkg, ' version ', v,
+              paste('\n  \u2022', missing))
+    }
   }
 
   return(l_df)

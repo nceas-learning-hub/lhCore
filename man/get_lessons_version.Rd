@@ -8,6 +8,8 @@ get_lessons_version(pkg = "coreRlessons", quiet = FALSE)
 }
 \arguments{
 \item{pkg}{The name of the lessons package (e.g., "coreRlessons")}
+
+\item{quiet}{Suppress display of the version as a message?}
 }
 \value{
 The version of the package, as a character.

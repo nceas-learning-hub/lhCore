@@ -1,6 +1,7 @@
 #' Query the version of the lessons package
 #'
 #' @param pkg The name of the lessons package (e.g., "coreRlessons")
+#' @param quiet Suppress display of the version as a message?
 #'
 #' @return The version of the package, as a character.
 #' @export
