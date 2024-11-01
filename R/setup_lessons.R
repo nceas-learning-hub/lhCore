@@ -143,20 +143,18 @@ copy_folders <- function(lessons, from, to) {
   subfolder <- here::here(to)
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
-  ### copy over folders and files from coreRlessons to current project - strip
-  ### the .qmd from the lesson names, to look for the folder names
-  fs <- stringr::str_remove(lessons, ".qmd$")
-
+  ### copy over folders and files from coreRlessons to current project
   fs_available <- list.files(system.file(from, package = "coreRlessons"), full.names = TRUE)
   fs_to_copy <- fs_available[basename(fs_available) %in% fs]
+
   if(length(fs_to_copy) > 0) {
     file.copy(fs_to_copy, subfolder, recursive = TRUE)
   }
+
 }
 
 
 create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE) {
-  quarto_yml_template <- system.file("course_files", "_quarto_template.yml", package = "coreRlessons")
   quarto_yml_file <- here::here("_quarto.yml")
 
   if(!overwrite & file.exists(quarto_yml_file)) {
@@ -164,6 +162,7 @@ create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE)
   }
 
   ### copy a clean version of the template
+  quarto_yml_template <- system.file("course_files", "_quarto_template.yml", package = "coreRlessons")
   file.copy(quarto_yml_template, quarto_yml_file, overwrite = overwrite)
 
   ### get metadata for fields
@@ -186,6 +185,12 @@ create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE)
 
 define_lesson_txt <- function(lessons, modules, prefix) {
   v <- get_lessons_version()
+
+  if(any(!str_detect(lessons, '\\..md$'))) {
+    ### attach file extensions
+    fs_avail <- available_lessons()
+  }
+
   if(is.null(modules)) {
     ### if lessons is not a named vector, simple case
     lesson_txt <- sprintf("    - %s%02d_%s  ###  (coreRlessons v%s)",
