@@ -96,9 +96,10 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
   create_index_qmd(overwrite)
 
   ### Other files needed to create the book
-  addl_filenames <- c("book.bib", "cover.png", "style.css", "toc.css")
-  addl_sys_files <- system.file("course_files", addl_filenames, package = "coreRlessons")
-  file.copy(addl_sys_files, here::here(addl_filenames))
+  ### possibly just copy everything except those with _template in the name?
+  addl_sys_files <- list.files(system.file("course_files", package = "coreRlessons"))
+  addl_sys_files <- addl_sys_files[!stringr::str_detect(addl_sys_files, 'template')]
+  file.copy(addl_sys_files, here::here(basename(addl_filenames)))
 
   message("Course populated with lessons!  Refresh the file pane to see the
           course files and folders.\n")
