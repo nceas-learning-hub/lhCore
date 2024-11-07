@@ -19,21 +19,29 @@
 
 update_lessons <- function(lessons = "all", version = NULL) {
   ### placeholder - give a vector of lesson names, optionally give a version tag
-  ### if version tag is NULL use latest
-  ### maybe version tag is a commit hash, a date, a version number, or a release?
-  ### could also give a flag of lessons = 'all' maybe, so it updates all update-able lessons
-  ### is there a way to track which lessons are custom (and not update those)?
-  ### * maybe locally, make a copy with a different name?
-  ### * if filename doesn't match an "official" lesson then it won't get updated (with a warning)
-
-
-  ### resolve version (separate non-exported function):
-  ### * figure out type of version by context
-  ### * resolve it to some common currency of version (a commit hash is most fine-grained I think)
-  ### * compare requested version to current version
-  ### * return "current" or commit hash
+  ### if version tag is NULL use latest otherwise use whatever the user supplied
+  ### in the `@ref` portion - could be a commit, tag, branch name
+  ### install_github('nceas-learning-hub', 'coreRlessons@v0.1.1')
 
   ### if version is not current, install coreRlessons from requested version
   ### identify lessons to be updated - which match the names in coreRlessons at this version
   ### copy over into sections folder, overwriting old versions
+
+  ### Set up temp library location for desired version
+  tmp_lib <- "~/tmp_coreRlessons"
+  dir.create(tmp_lib)
+
+  withr::with_libpaths(tmp_lib,
+                       remotes::install_github("nceas-learning-hub/coreRlessons",
+                                               ref = "v0.0.1"))
+
+  ### Access files from the package within the temp directory
+  xx <- list.files(system.file('lessons', package = "coreRlessons", lib.loc = tmp_lib,
+                   mustWork = FALSE), full.names = TRUE)
+
+  ### clean up! (use an on.exit to make sure?)
+  unlink(tmp_lib, recursive = TRUE)
+
+
+
 }
