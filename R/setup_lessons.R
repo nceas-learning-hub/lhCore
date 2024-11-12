@@ -36,6 +36,15 @@
 #' ### modules as argument
 #' setup_lessons(lessons = available_lessons()$lesson[1:6],
 #'               modules = rep(c("day 1", "day 2"), each = 3))
+#'
+#' ### modules and course as dataframe
+#' example_course <- coreRlessons::example_course
+#' head(example_course, 3)
+#' #   module                        lesson
+#' # 1  Day 1    r_programming_introduction
+#' # 2  Day 1    r_quarto_literate_analysis
+#' # 3  Day 1 activity_reproducibility_lego
+#' setup_lessons(example_course)
 #' }
 #' @export
 
@@ -59,16 +68,13 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
     if(length(modules) != length(lessons)) stop('Length of lessons and modules must match!')
   }
 
-  ### convert lessons vec into qmd filenames
-  lessons_qmd <- stringr::str_detect(lessons, "\\.qmd$")
-  if(any(!lessons_qmd)) {
-    message("  Appending .qmd to bare filenames in lessons vector...")
-    lessons <- ifelse(lessons_qmd, lessons, paste0(lessons, ".qmd"))
-  }
+  ### strip qmd and rmd extensions from lesson vector
+  lessons <- stringr::str_remove(lessons, '\\..md$')
+
 
   ### check that all lessons are in coreRlessons
-  lessons_available <- available_lessons()$lesson_file
-  lessons_missing <- lessons[!lessons %in% basename(lessons_available)]
+  lessons_available <- available_lessons()$lesson
+  lessons_missing <- lessons[!lessons %in% lessons_available]
   if(length(lessons_missing) > 0) stop("Some lessons are not found in the coreRlessons package:",
                                        paste0("\n\u25CF ", lessons_missing))
 
@@ -90,9 +96,10 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
   create_index_qmd(overwrite)
 
   ### Other files needed to create the book
-  addl_filenames <- c("book.bib", "cover.png", "style.css", "toc.css")
-  addl_sys_files <- system.file("course_files", addl_filenames, package = "coreRlessons")
-  file.copy(addl_sys_files, here::here(addl_filenames))
+  ### possibly just copy everything except those with _template in the name?
+  addl_sys_files <- list.files(system.file("course_files", package = "coreRlessons"))
+  addl_sys_files <- addl_sys_files[!stringr::str_detect(addl_sys_files, 'template')]
+  file.copy(addl_sys_files, here::here(basename(addl_filenames)))
 
   message("Course populated with lessons!  Refresh the file pane to see the
           course files and folders.\n")
@@ -109,7 +116,7 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
 copy_lessons <- function(lessons, from, to = ".", prefix = "s") {
   ### from is the directory to copy lessons from (inside the coreRlessons package);
   ### to is the directory to copy the lessons to (inside the course repository)
-  ### lessons is the list of lesson filenames
+  ### lessons is the list of lesson filenames, without extensions
   ### prefix is appended to the start of the filename to sort in order (default "s" for session)
 
   ### create subfolder as needed
@@ -117,19 +124,11 @@ copy_lessons <- function(lessons, from, to = ".", prefix = "s") {
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
   ### copy over files from coreRlessons to current project
+  fs_avail <- available_lessons(lessons) ### built in error check for missing lessons
 
-  fs_available <- list.files(system.file(from, package = "coreRlessons"), full.names = TRUE)
+  fs_to_copy <- fs_avail$lesson_file[order(match(fs_avail$lesson, lessons))]
 
-  fs_to_copy <- fs_available[basename(fs_available) %in% lessons]
-
-  ### This error check is probably redundant!
-  if(length(fs_to_copy) != length(lessons)) {
-    stop("Not all lessons available to copy!  Lessons requested:",
-         paste("\n\u25CF", lessons), "\nLessons available to copy:",
-         paste("\n\u25CF", fs_to_copy))
-  }
-
-  fs_out <- sprintf('%s/%s%02d_%s', subfolder, prefix, 1:length(lessons), lessons)
+  fs_out <- sprintf('%s/%s%02d_%s', subfolder, prefix, 1:length(lessons), basename(fs_to_copy))
 
   if(length(fs_to_copy) > 0) {
     file.copy(fs_to_copy, fs_out)
@@ -145,20 +144,18 @@ copy_folders <- function(lessons, from, to) {
   subfolder <- here::here(to)
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
-  ### copy over folders and files from coreRlessons to current project - strip
-  ### the .qmd from the lesson names, to look for the folder names
-  fs <- stringr::str_remove(lessons, ".qmd$")
-
+  ### copy over folders and files from coreRlessons to current project
   fs_available <- list.files(system.file(from, package = "coreRlessons"), full.names = TRUE)
   fs_to_copy <- fs_available[basename(fs_available) %in% fs]
+
   if(length(fs_to_copy) > 0) {
     file.copy(fs_to_copy, subfolder, recursive = TRUE)
   }
+
 }
 
 
 create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE) {
-  quarto_yml_template <- system.file("course_files", "_quarto_template.yml", package = "coreRlessons")
   quarto_yml_file <- here::here("_quarto.yml")
 
   if(!overwrite & file.exists(quarto_yml_file)) {
@@ -166,6 +163,7 @@ create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE)
   }
 
   ### copy a clean version of the template
+  quarto_yml_template <- system.file("course_files", "_quarto_template.yml", package = "coreRlessons")
   file.copy(quarto_yml_template, quarto_yml_file, overwrite = overwrite)
 
   ### get metadata for fields
@@ -188,6 +186,12 @@ create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE)
 
 define_lesson_txt <- function(lessons, modules, prefix) {
   v <- get_lessons_version()
+
+  if(any(!str_detect(lessons, '\\..md$'))) {
+    ### attach file extensions
+    fs_avail <- available_lessons()
+  }
+
   if(is.null(modules)) {
     ### if lessons is not a named vector, simple case
     lesson_txt <- sprintf("    - %s%02d_%s  ###  (coreRlessons v%s)",

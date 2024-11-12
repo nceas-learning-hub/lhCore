@@ -11,9 +11,9 @@
 #'
 #' @examples \dontrun{available_lessons(lessons = c('r_functions.qmd', 'this_package_does_not_exist.Rmd'))}
 
-available_lessons <- function(lessons = NULL, pkg = 'coreRlessons') {
+available_lessons <- function(lessons = NULL, pkg = 'coreRlessons', quiet = TRUE) {
   v <- packageVersion(pkg) |> paste(collapse = '.')
-  message('Retrieving available lessons from coreRlessons version ', v)
+  if(!quiet) message('Retrieving available lessons from coreRlessons version ', v)
 
   l_vec <- list.files(system.file('lessons', package = pkg),
                       full.names = TRUE)
@@ -26,8 +26,10 @@ available_lessons <- function(lessons = NULL, pkg = 'coreRlessons') {
     missing <- l_cln[!l_cln %in% l_df$lesson]
     ### filter dataframe to user-provided lessons only
     l_df <- l_df[l_df$lesson %in% l_cln, ]
-    warning('Note: the following lessons are not available in ', pkg, ' version ', v,
-            paste('\n  \u2022', missing))
+    if(length(missing) > 0) {
+      warning('Note: the following lessons are not available in ', pkg, ' version ', v,
+              paste('\n  \u2022', missing))
+    }
   }
 
   return(l_df)

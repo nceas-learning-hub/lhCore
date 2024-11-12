@@ -44,5 +44,14 @@ setup_lessons(lessons = lesson_mods)
 ### modules as argument
 setup_lessons(lessons = available_lessons()$lesson[1:6],
               modules = rep(c("day 1", "day 2"), each = 3))
+
+### modules and course as dataframe
+example_course <- coreRlessons::example_course
+head(example_course, 3)
+#   module                        lesson
+# 1  Day 1    r_programming_introduction
+# 2  Day 1    r_quarto_literate_analysis
+# 3  Day 1 activity_reproducibility_lego
+setup_lessons(example_course)
 }
 }
