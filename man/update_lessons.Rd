@@ -4,7 +4,7 @@
 \alias{update_lessons}
 \title{Update lessons in a coreR course}
 \usage{
-update_lessons(lessons = "all", version = NULL)
+update_lessons(lessons = "all", pkg = "coreRlessons", version = NULL)
 }
 \arguments{
 \item{lessons}{A vector of specific lessons to be updated, based on file
@@ -14,6 +14,8 @@ will update all available lessons, i.e., those whose lesson names match
 those in the source book.  Customized lessons, whose names do not match
 those in the source book, will not be updated, even with \code{version = 'all'}.}
 
+\item{pkg}{Name of the package where lessons are curated, default "coreRlessons"}
+
 \item{version}{A version of the coreR package from which the updated lessons
 should be pulled.  \code{version} can be given as a commit hash, a tag, a
 version, or a date.}
@@ -22,6 +24,6 @@ version, or a date.}
 Update lessons in a coreR course
 }
 \examples{
-# update_lessons(lessons = c('git-github-intro', 'r-creating-packages.qmd'),
-#                version = '0.0.0.9000')
+# update_lessons(lessons = c("git-github-intro", "r-creating-packages.qmd"),
+#                version = "v0.0.1")
 }

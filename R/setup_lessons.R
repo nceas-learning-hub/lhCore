@@ -200,7 +200,7 @@ define_lesson_txt <- function(lessons, modules, prefix) {
   if(is.null(modules)) {
     ### if lessons is not a named vector, simple case
     ### `lessons` vector is bare filenames, no extension - standardize to .qmd
-    lesson_txt <- sprintf("    - %s%02d_%s.qmd  ###  (coreRlessons v%s)",
+    lesson_txt <- sprintf("      - %s%02d_%s.qmd  ###  (coreRlessons version %s)",
                            prefix, 1:length(lessons), lessons, v) |>
       paste(collapse = "\n")
   } else {
@@ -219,10 +219,10 @@ define_lesson_txt <- function(lessons, modules, prefix) {
       # mod <- mod_names[2]
       mod_lsns <- lsn_path[modules == mod]
       ### `lessons` vector is bare filenames, no extension - standardize to .qmd
-      mod_lsn_vec <- sprintf("      - %s.qmd  ###  (coreRlessons v%s)",
+      mod_lsn_vec <- sprintf("        - %s.qmd  ###  (coreRlessons v%s)",
                              mod_lsns, v) |>
         paste(collapse = "\n")
-      mod_txt <- sprintf("    - section: \"%s\"\n      contents:\n%s",
+      mod_txt <- sprintf("      - section: \"%s\"\n        contents:\n%s",
                          mod, mod_lsn_vec)
       mod_vec[mod] <- mod_txt
     }
