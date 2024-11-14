@@ -9,7 +9,7 @@
 #' @examples \dontrun{get_lessons_version(pkg = "coreRlessons")}
 #'
 get_lessons_version <- function(pkg = "coreRlessons", quiet = FALSE) {
-  v <- packageVersion(pkg) |> paste(collapse = '.')
+  v <- utils::packageVersion(pkg) |> paste(collapse = '.')
   if(!quiet) message(pkg, ' version ', v)
   return(v)
 }

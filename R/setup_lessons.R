@@ -79,11 +79,14 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
                                        paste0("\n\u25CF ", lessons_missing))
 
 
-  ### copy over files from coreRlessons to current project: lessons, images, data
+  ### copy over lesson files from coreRlessons to current project: lessons, images, data, _extensions
   lesson_prefix <- "s" ### appends sXX_ to start of lesson filenames
   copy_lessons(lessons, from = "lessons", to = ".", prefix = lesson_prefix)
+
+  ### copy over lesson-associated folders from coreRlessons to current project: lessons, images, data
   copy_folders(lessons, from = "lesson_images", to = "images")
   copy_folders(lessons, from = "lesson_data",   to = "data")
+  copy_folders(lessons, from = "lesson_slides", to = "slides")
 
   ### create _quarto.yml - including links to sessions, course metadata, etc
   create_quarto_yml(lessons, modules, prefix = lesson_prefix, overwrite)
@@ -97,9 +100,14 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
 
   ### Other files needed to create the book
   ### possibly just copy everything except those with _template in the name?
-  addl_sys_files <- list.files(system.file("course_files", package = "coreRlessons"))
-  addl_sys_files <- addl_sys_files[!stringr::str_detect(addl_sys_files, 'template')]
-  file.copy(addl_sys_files, here::here(basename(addl_filenames)))
+  addl_sys_files <- list.files(system.file("course_files", package = "coreRlessons"), full.names = TRUE)
+  addl_sys_files <- addl_sys_files[!grepl("template", basename(addl_sys_files))]
+  file.copy(addl_sys_files, here::here(basename(addl_sys_files)))
+
+  ### copy over _extensions folder - later, maybe quarto install it instead?
+  ext_folder <- system.file('_extensions', package = 'coreRlessons')
+  file.copy(ext_folder, here::here(), recursive = TRUE)
+
 
   message("Course populated with lessons!  Refresh the file pane to see the
           course files and folders.\n")
@@ -144,9 +152,11 @@ copy_folders <- function(lessons, from, to) {
   subfolder <- here::here(to)
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
+  lessons <- sub("\\..md", "", lessons) ### strip extension if necessary
+
   ### copy over folders and files from coreRlessons to current project
   fs_available <- list.files(system.file(from, package = "coreRlessons"), full.names = TRUE)
-  fs_to_copy <- fs_available[basename(fs_available) %in% fs]
+  fs_to_copy <- fs_available[basename(fs_available) %in% lessons]
 
   if(length(fs_to_copy) > 0) {
     file.copy(fs_to_copy, subfolder, recursive = TRUE)
@@ -168,17 +178,17 @@ create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE)
 
   ### get metadata for fields
   meta <- get_course_metadata()
-  course_url <- file.path("https://github.com", meta["course_org"], meta["course_proj"])
+  course_repo <- file.path("https://github.com", meta["course_org"], meta["course_proj"])
 
   ### define lesson list
   lesson_txt <- define_lesson_txt(lessons, modules, prefix)
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- readr::read_file(quarto_yml_file) |>
-    stringr::str_replace("COURSE_TITLE", meta["title"]) |>
-    stringr::str_replace("COURSE_DATES", paste(meta["start_date"], "-", meta["end_date"])) |>
-    stringr::str_replace("COURSE_URL", course_url) |>
-    stringr::str_replace(" *SESSION_LINKS", lesson_txt)
+    stringr::str_replace_all("COURSE_TITLE", meta["title"]) |>
+    stringr::str_replace_all("COURSE_DATES", paste(meta["start_date"], "-", meta["end_date"])) |>
+    stringr::str_replace_all("COURSE_REPO", course_repo) |>
+    stringr::str_replace_all(" *SESSION_LINKS", lesson_txt)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, quarto_yml_file)
@@ -187,34 +197,32 @@ create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE)
 define_lesson_txt <- function(lessons, modules, prefix) {
   v <- get_lessons_version()
 
-  if(any(!str_detect(lessons, '\\..md$'))) {
-    ### attach file extensions
-    fs_avail <- available_lessons()
-  }
-
   if(is.null(modules)) {
     ### if lessons is not a named vector, simple case
-    lesson_txt <- sprintf("    - %s%02d_%s  ###  (coreRlessons v%s)",
+    ### `lessons` vector is bare filenames, no extension - standardize to .qmd
+    lesson_txt <- sprintf("    - %s%02d_%s.qmd  ###  (coreRlessons v%s)",
                            prefix, 1:length(lessons), lessons, v) |>
       paste(collapse = "\n")
   } else {
     message("Module names detected...")
     ### if lessons is a named vector, break into modules by name
     mod_names <- unique(modules) ### keep in order
-    mod_vec <- mod_names |> setNames(mod_names)
+    mod_vec <- mod_names
+    names(mod_vec) <- mod_names
 
     ### prefix and number the lessons first; attach module names
-    lsn_path <- sprintf('%s%02d_%s', prefix, 1:length(lessons), lessons) |>
-      setNames(names(lessons))
+    lsn_path <- sprintf('%s%02d_%s', prefix, 1:length(lessons), lessons)
+    names(lsn_path) <- names(lessons)
 
     ### loop over modules to create a unique set for each, with part and chapter
     for(mod in mod_names) {
       # mod <- mod_names[2]
       mod_lsns <- lsn_path[modules == mod]
-      mod_lsn_vec <- sprintf("      - %s  ###  (coreRlessons v%s)",
+      ### `lessons` vector is bare filenames, no extension - standardize to .qmd
+      mod_lsn_vec <- sprintf("      - %s.qmd  ###  (coreRlessons v%s)",
                              mod_lsns, v) |>
         paste(collapse = "\n")
-      mod_txt <- sprintf("    - part: \"%s\"\n      chapters:\n%s",
+      mod_txt <- sprintf("    - section: \"%s\"\n      contents:\n%s",
                          mod, mod_lsn_vec)
       mod_vec[mod] <- mod_txt
     }
@@ -229,9 +237,8 @@ get_course_metadata<- function() {
   ### get metadata from course_metadata.txt
   metadata_txt <- readr::read_file("course_metadata.txt")
   meta_raw <- stringr::str_split(metadata_txt, "\\n") |> unlist()
-  meta <- meta_raw |>
-    stringr::str_remove(".+= ") |>
-    setNames(stringr::str_remove(meta_raw, " = .+"))
+  meta <- sub(".+= ", "", meta_raw)
+  names(meta) <- sub(" = .+", "", meta_raw)
 
   return(meta)
 }

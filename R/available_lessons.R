@@ -3,6 +3,7 @@
 #' @param lessons An optional character vector of lessons to query whether
 #'     specific lessons are available
 #' @param pkg The package to query for lesson availability (default `coreRlessons`)
+#' @param quiet Suppress messages?
 #'
 #' @return A data frame containing the file names (.qmd) of all (or selected)
 #'     lessons from the coreRlessons package.  Eventually, including file title, date, and
@@ -12,7 +13,7 @@
 #' @examples \dontrun{available_lessons(lessons = c('r_functions.qmd', 'this_package_does_not_exist.Rmd'))}
 
 available_lessons <- function(lessons = NULL, pkg = 'coreRlessons', quiet = TRUE) {
-  v <- packageVersion(pkg) |> paste(collapse = '.')
+  v <- utils::packageVersion(pkg) |> paste(collapse = '.')
   if(!quiet) message('Retrieving available lessons from coreRlessons version ', v)
 
   l_vec <- list.files(system.file('lessons', package = pkg),

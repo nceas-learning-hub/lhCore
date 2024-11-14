@@ -19,7 +19,8 @@ BugReports: https://github.com/nceas-learning-hub/coreR/issues
 Imports:
     here,
     readr,
-    stats,
+    remotes,
     stringr,
     usethis,
-    utils
+    utils,
+    withr
