@@ -10,7 +10,7 @@
 #'     will belong.
 #' @param course_title A brief but descriptive title for the course.  If NULL
 #'     (default), the title will be set the same as the project name.
-#' @param course_description A sentence or two describing the course.  If NULL
+#' @param course_desc A sentence or two describing the course.  If NULL
 #'     (default), will be left empty.
 #' @param start_date The starting date (as character, so any preferred format).
 #'     If NULL, will be left empty.
@@ -26,18 +26,18 @@
 #' \dontrun{
 #' init_course(course_proj = "2024-10-coreR",
 #'             course_title = "CoreR October 2024",
-#'             course_description = "CoreR course offered at NCEAS in Oct 2024",
+#'             course_desc = "CoreR course offered at NCEAS in Oct 2024",
 #'             start_date = "Oct. 6, 2024",
 #'             end_date = "Oct. 10, 2024")
 #' }
 #'
 
 init_course <- function(course_proj,
-                        course_org = 'nceas-learning-hub',
+                        course_org   = 'nceas-learning-hub',
                         course_title = NULL,
-                        course_description = NULL,
-                        start_date = NULL,
-                        end_date = NULL,
+                        course_desc  = NULL,
+                        start_date   = NULL,
+                        end_date     = NULL,
                         loc = ".") {
   ### set up a new project using usethis::create_project(path = "MyNewProject", open = TRUE, rstudio = TRUE)
   if(stringr::str_detect(course_proj, "[^A-Za-z0-9-_]")) {
