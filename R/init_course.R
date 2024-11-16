@@ -54,12 +54,12 @@ init_course <- function(course_proj,
 
   ### Add metadata file - overwrite NULLs for title and description
   if(is.null(course_title)) course_title <- course_proj
-  if(is.null(course_description)) course_description <- course_title
+  if(is.null(course_desc)) course_desc <- course_title
   if(is.null(start_date)) start_date <- '2024-01-01'
   if(is.null(end_date)) end_date <- '2024-12-31'
 
   metadata_txt <- sprintf('course_proj = %s\ncourse_org = %s\ntitle = %s\ndescription = %s\nstart_date = %s\nend_date = %s',
-                          course_proj, course_org, course_title, course_description, start_date, end_date)
+                          course_proj, course_org, course_title, course_desc, start_date, end_date)
   readr::write_file(metadata_txt, file.path(repo_path, 'course_metadata.txt'))
   message("Metadata file created at ", normalizePath(repo_path), '/course_metadata.txt')
   cat(metadata_txt, '\n\n')

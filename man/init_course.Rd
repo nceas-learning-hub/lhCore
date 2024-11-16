@@ -8,7 +8,7 @@ init_course(
   course_proj,
   course_org = "nceas-learning-hub",
   course_title = NULL,
-  course_description = NULL,
+  course_desc = NULL,
   start_date = NULL,
   end_date = NULL,
   loc = "."
@@ -24,7 +24,7 @@ will belong.}
 \item{course_title}{A brief but descriptive title for the course.  If NULL
 (default), the title will be set the same as the project name.}
 
-\item{course_description}{A sentence or two describing the course.  If NULL
+\item{course_desc}{A sentence or two describing the course.  If NULL
 (default), will be left empty.}
 
 \item{start_date}{The starting date (as character, so any preferred format).
@@ -48,7 +48,7 @@ file will be used to help populate details in later functions.
 \dontrun{
 init_course(course_proj = "2024-10-coreR",
             course_title = "CoreR October 2024",
-            course_description = "CoreR course offered at NCEAS in Oct 2024",
+            course_desc = "CoreR course offered at NCEAS in Oct 2024",
             start_date = "Oct. 6, 2024",
             end_date = "Oct. 10, 2024")
 }
