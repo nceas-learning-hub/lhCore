@@ -104,10 +104,10 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
   addl_sys_files <- addl_sys_files[!grepl("template", basename(addl_sys_files))]
   file.copy(addl_sys_files, here::here(basename(addl_sys_files)))
 
-  ### copy over _extensions folder - later, maybe quarto install it instead?
-  ext_folder <- system.file('_extensions', package = 'coreRlessons')
-  file.copy(ext_folder, here::here(), recursive = TRUE)
-
+  # ### copy over _extensions folder - later, maybe quarto install it instead?
+  # ext_folder <- system.file('_extensions', package = 'coreRlessons')
+  # file.copy(ext_folder, here::here(), recursive = TRUE)
+  install_theme(org = 'nceas-learning-hub', repo = 'lh_theme', theme = 'lh_theme')
 
   message("Course populated with lessons!  Refresh the file pane to see the
           course files and folders.\n")

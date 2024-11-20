@@ -47,7 +47,7 @@ update_lessons <- function(lessons = "all", pkg = "coreRlessons", version = NULL
   ### Access the lessons pkg on Github and install in temp library location
   message('Installing package ', pkg, ' version ', version, ' into temp library...')
   withr::with_libpaths(tmp_lib, {
-    install.packages('remotes') ### b/c the next line access `remotes` from tmp_lib
+    utils::install.packages('remotes') ### b/c the next line access `remotes` from tmp_lib
     remotes::install_github(sprintf("nceas-learning-hub/%s", pkg),
                             ref = version)
   })
