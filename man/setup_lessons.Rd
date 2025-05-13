@@ -4,7 +4,12 @@
 \alias{setup_lessons}
 \title{Set up a schedule of course lessons}
 \usage{
-setup_lessons(lessons, modules = NULL, overwrite = FALSE)
+setup_lessons(
+  lessons,
+  package = "lhLessons",
+  modules = NULL,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{lessons}{Information on the lessons to be included in the course, as a
@@ -13,6 +18,8 @@ character vector or data.frame.  A character vector containing the names
 character vector where the names are course modules (e.g., "Day 1", "Day 2").
 Alternately, a data.frame with columns "module" and "lesson", similar to the
 named character vector.}
+
+\item{package}{The name of the course lessons package to use.}
 
 \item{modules}{An additional way to provide module information for the lessons:
 a vector of module names that matches the length of the lessons vector. Caution:

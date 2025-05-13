@@ -12,6 +12,7 @@
 #'     character vector where the names are course modules (e.g., "Day 1", "Day 2").
 #'     Alternately, a data.frame with columns "module" and "lesson", similar to the
 #'     named character vector.
+#' @param package The name of the course lessons package to use.
 #' @param modules An additional way to provide module information for the lessons:
 #'     a vector of module names that matches the length of the lessons vector. Caution:
 #'     if `modules` is not NULL, and module names are provided directly in `lessons`,
@@ -48,11 +49,13 @@
 #' }
 #' @export
 
-setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
+setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwrite = FALSE) {
+
+  verify_course_repo(query = 'Set up course lessons here?')
 
   ### Query lesson version (checks to ensure lessons package is installed!)
-  v <- get_lessons_version(quiet = TRUE)
-  message("Installing lessons from coreRlessons, version ", v, "...")
+  v <- get_lessons_version(pkg = package, quiet = TRUE)
+  message("Installing lessons from ", package, ", version ", v, "...")
 
   ### If lessons provided as data.frame, break into separate lesson and module vectors
   if(any(class(lessons) == "data.frame")) {
@@ -88,26 +91,8 @@ setup_lessons <- function(lessons, modules = NULL, overwrite = FALSE) {
   copy_folders(lessons, from = "lesson_data",   to = "data")
   copy_folders(lessons, from = "lesson_slides", to = "slides")
 
-  ### create _quarto.yml - including links to sessions, course metadata, etc
-  create_quarto_yml(lessons, modules, prefix = lesson_prefix, overwrite)
-
-  ################################
-  ### set up additional files! ###
-  ################################
-
-  ### create index.qmd - with description from metadata
-  create_index_qmd(overwrite)
-
-  ### Other files needed to create the book
-  ### possibly just copy everything except those with _template in the name?
-  addl_sys_files <- list.files(system.file("course_files", package = "coreRlessons"), full.names = TRUE)
-  addl_sys_files <- addl_sys_files[!grepl("template", basename(addl_sys_files))]
-  file.copy(addl_sys_files, here::here(basename(addl_sys_files)))
-
-  # ### copy over _extensions folder - later, maybe quarto install it instead?
-  # ext_folder <- system.file('_extensions', package = 'coreRlessons')
-  # file.copy(ext_folder, here::here(), recursive = TRUE)
-  install_theme(org = 'nceas-learning-hub', repo = 'lh_theme', theme = 'lh_theme')
+  ### set up _quarto.yml with links to sessions (other info in setup_course_structure.R)
+  setup_quarto_yml(lessons, modules, prefix = lesson_prefix, overwrite)
 
   message("Course populated with lessons!  Refresh the file pane to see the
           course files and folders.\n")
@@ -165,43 +150,13 @@ copy_folders <- function(lessons, from, to) {
 }
 
 
-create_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE) {
-  quarto_yml_file <- here::here("_quarto.yml")
-
-  if(!overwrite & file.exists(quarto_yml_file)) {
-    stop("File exists: ", quarto_yml_file, " but overwrite is FALSE - _quarto.yml file not updated")
-  }
-
-  ### copy a clean version of the template
-  quarto_yml_template <- system.file("course_files", "_quarto_template.yml", package = "coreRlessons")
-  file.copy(quarto_yml_template, quarto_yml_file, overwrite = overwrite)
-
-  ### get metadata for fields
-  meta <- get_course_metadata()
-  course_repo <- file.path("https://github.com", meta["course_org"], meta["course_proj"])
-
-  ### define lesson list
-  lesson_txt <- define_lesson_txt(lessons, modules, prefix)
-
-  ### Update the _quarto.yml with all the good info!
-  quarto_yml_txt <- readr::read_file(quarto_yml_file) |>
-    stringr::str_replace_all("COURSE_TITLE", meta["title"]) |>
-    stringr::str_replace_all("COURSE_DATES", paste(meta["start_date"], "-", meta["end_date"])) |>
-    stringr::str_replace_all("COURSE_REPO", course_repo) |>
-    stringr::str_replace_all(" *SESSION_LINKS", lesson_txt)
-
-  ### write out updated yml file
-  readr::write_file(quarto_yml_txt, quarto_yml_file)
-}
-
 define_lesson_txt <- function(lessons, modules, prefix) {
-  v <- get_lessons_version()
 
   if(is.null(modules)) {
     ### if lessons is not a named vector, simple case
     ### `lessons` vector is bare filenames, no extension - standardize to .qmd
-    lesson_txt <- sprintf("      - %s%02d_%s.qmd  ###  (coreRlessons version %s)",
-                           prefix, 1:length(lessons), lessons, v) |>
+    lesson_txt <- sprintf("      - %s%02d_%s.qmd",
+                           prefix, 1:length(lessons), lessons) |>
       paste(collapse = "\n")
   } else {
     message("Module names detected...")
@@ -219,8 +174,8 @@ define_lesson_txt <- function(lessons, modules, prefix) {
       # mod <- mod_names[2]
       mod_lsns <- lsn_path[modules == mod]
       ### `lessons` vector is bare filenames, no extension - standardize to .qmd
-      mod_lsn_vec <- sprintf("        - %s.qmd  ###  (coreRlessons v%s)",
-                             mod_lsns, v) |>
+      mod_lsn_vec <- sprintf("        - %s.qmd",
+                             mod_lsns) |>
         paste(collapse = "\n")
       mod_txt <- sprintf("      - section: \"%s\"\n        contents:\n%s",
                          mod, mod_lsn_vec)
@@ -233,32 +188,3 @@ define_lesson_txt <- function(lessons, modules, prefix) {
   return(lesson_txt)
 }
 
-get_course_metadata<- function() {
-  ### get metadata from course_metadata.txt
-  metadata_txt <- readr::read_file("course_metadata.txt")
-  meta_raw <- stringr::str_split(metadata_txt, "\\n") |> unlist()
-  meta <- sub(".+= ", "", meta_raw)
-  names(meta) <- sub(" = .+", "", meta_raw)
-
-  return(meta)
-}
-
-create_index_qmd <- function(overwrite = FALSE) {
-  index_template <- system.file("course_files", "index_template.qmd", package = "coreRlessons")
-  index_file <- here::here("index.qmd")
-  if(!overwrite & file.exists(index_file)) {
-    stop("File exists: ", index_file, " but overwrite is FALSE - index.qmd file not updated")
-  }
-  ### copy a clean version of the template
-  file.copy(index_template, index_file, overwrite = overwrite)
-
-  ### get metadata for fields
-  meta <- get_course_metadata()
-
-  ### read index and update description
-  index_txt <- readr::read_file(index_file) |>
-    stringr::str_replace("COURSE_DESCRIPTION", meta["description"])
-
-  ### write out updated index.qmd file
-  readr::write_file(index_txt, index_file)
-}

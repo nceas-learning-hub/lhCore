@@ -13,20 +13,20 @@ knitr::opts_chunk$set(
 )
 ```
 
-# coreR
+# `lhCore` and `lhLessons` packages
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of coreR is to ...
+The goal of these packages is to ...
 
 ## Installation
 
-You can install the development version of coreR from [GitHub](https://github.com/) with:
+You can install the development version of lhCore from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
-pak::pak("nceas-learning-hub/coreR")
+pak::pak("nceas-learning-hub/lhCore")
 ```
 
 ## Example
@@ -34,7 +34,7 @@ pak::pak("nceas-learning-hub/coreR")
 This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
-library(coreR)
+library(lhCore)
 ## basic example code
 ```
 
@@ -42,7 +42,7 @@ library(coreR)
 
 Quarto documents can go into a folder called `inst/quarto` or `inst/sections` or the like.  This `inst` folder can have any structure or files inside, but the next level (i.e., `quarto` or `sections`) cannot conflict with any folders in the base level of the package (e.g., `R`, `man`, etc).
 
-* These can be accessed using `system.file('sections', '<filename>', package = 'coreR')` and then copied into a local file structure.
+* These can be accessed using `system.file('sections', '<filename>', package = 'lhCore')` and then copied into a local file structure.
 
 We can use `usethis::create_project(path = "MyNewProject", open = TRUE, rstudio = TRUE)` to create a new bare R project, and then populate with the file structure desired
 

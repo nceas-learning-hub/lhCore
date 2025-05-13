@@ -17,8 +17,7 @@
 #'
 #' @return If successful, returns the URL of the installed theme repository.
 #' @export
-#'
-#' @examples \dontrun{}
+
 install_theme <- function(user = NULL,
                           org = 'nceas-learning-hub',
                           repo = 'lh_theme',

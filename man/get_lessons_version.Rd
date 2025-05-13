@@ -4,10 +4,10 @@
 \alias{get_lessons_version}
 \title{Query the version of the lessons package}
 \usage{
-get_lessons_version(pkg = "coreRlessons", quiet = FALSE)
+get_lessons_version(pkg, quiet = FALSE)
 }
 \arguments{
-\item{pkg}{The name of the lessons package (e.g., "coreRlessons")}
+\item{pkg}{The name of the lessons package (e.g., "lhLessons")}
 
 \item{quiet}{Suppress display of the version as a message?}
 }
@@ -18,6 +18,6 @@ The version of the package, as a character.
 Query the version of the lessons package
 }
 \examples{
-\dontrun{get_lessons_version(pkg = "coreRlessons")}
+\dontrun{get_lessons_version(pkg)}
 
 }

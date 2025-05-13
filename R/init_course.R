@@ -1,21 +1,19 @@
-#' Initialize a coreR course
+#' Initialize a lhCore course
 #'
 #' This will set up the basic project structure for a new course: a project
 #' repository, plus a file containing metadata about the course.  The metadata
 #' file will be used to help populate details in later functions.
 #'
 #' @param course_proj The name of the project directory (and Github repo) for the course.
-#'     Recommended format: YYYY-MM-coreR.
+#'     Recommended format: YYYY-MM-<course type>.
 #' @param course_org The name of the Github organization to which the course
 #'     will belong.
 #' @param course_title A brief but descriptive title for the course.  If NULL
 #'     (default), the title will be set the same as the project name.
 #' @param course_desc A sentence or two describing the course.  If NULL
 #'     (default), will be left empty.
-#' @param start_date The starting date (as character, so any preferred format).
+#' @param course_dates The dates of the course (as character, so any preferred format).
 #'     If NULL, will be left empty.
-#' @param end_date The ending date (use same format as start_date).
-#'     If NULL, and start_date is NULL, will be left empty.
 #' @param loc The file location where the course repository will be created.
 #'     Defaults to the current working directory.
 #'
@@ -24,11 +22,10 @@
 #'
 #' @examples
 #' \dontrun{
-#' init_course(course_proj = "2024-10-coreR",
+#' init_course(course_proj  = "2024-10-coreR",
 #'             course_title = "CoreR October 2024",
-#'             course_desc = "CoreR course offered at NCEAS in Oct 2024",
-#'             start_date = "Oct. 6, 2024",
-#'             end_date = "Oct. 10, 2024")
+#'             course_desc  = "CoreR course offered at NCEAS in Oct 2024",
+#'             course_dates = "Oct. 6 - 10, 2024")
 #' }
 #'
 
@@ -36,8 +33,7 @@ init_course <- function(course_proj,
                         course_org   = 'nceas-learning-hub',
                         course_title = NULL,
                         course_desc  = NULL,
-                        start_date   = NULL,
-                        end_date     = NULL,
+                        course_dates = NULL,
                         loc = ".") {
   ### set up a new project using usethis::create_project(path = "MyNewProject", open = TRUE, rstudio = TRUE)
   if(stringr::str_detect(course_proj, "[^A-Za-z0-9-_]")) {
@@ -54,22 +50,22 @@ init_course <- function(course_proj,
 
   ### Add metadata file - overwrite NULLs for title and description
   if(is.null(course_title)) course_title <- course_proj
-  if(is.null(course_desc)) course_desc <- course_title
-  if(is.null(start_date)) start_date <- '2024-01-01'
-  if(is.null(end_date)) end_date <- '2024-12-31'
+  if(is.null(course_desc))  course_desc <- course_title
+  if(is.null(course_dates)) course_dates <- '!!course dates!!'
 
-  metadata_txt <- sprintf('course_proj = %s\ncourse_org = %s\ntitle = %s\ndescription = %s\nstart_date = %s\nend_date = %s',
-                          course_proj, course_org, course_title, course_desc, start_date, end_date)
-  readr::write_file(metadata_txt, file.path(repo_path, 'course_metadata.txt'))
-  message("Metadata file created at ", normalizePath(repo_path), '/course_metadata.txt')
-  cat(metadata_txt, '\n\n')
+  metadata_df <- data.frame(
+    field = c('course_proj', 'course_org', 'course_title', 'course_desc', 'course_dates'),
+    value = c( course_proj,   course_org,   course_title,   course_desc,   course_dates))
+  readr::write_csv(metadata_df, file.path(repo_path, 'metadata_course.csv'))
+  message("Metadata file created at ", normalizePath(repo_path), '/metadata_course.csv')
+  print(metadata_df)
 
-  message('Recommended next steps: open the new project in RStudio, and then:',
-          "\n  \u2022 Use `coreR::available_lessons()` to see the lesson catalog from coreRlessons",
-          "\n  \u2022 Use `coreR::setup_lessons(<lessons>)` to install the lessons in the course",
-          "\n  \u2022 Use `usethis::use_git()` to set up your project as a Git-tracked project, and then...",
-          "\n  \u2022 Use `usethis::use_github(organisation = '", course_org,
-          "')` to connect the project with Github!\n")
+  message("Recommended next steps: open the new project in RStudio, and then:",
+          "\n  \u2022 Edit the index.qmd to ensure it accurately describes the course",
+          "\n  \u2022 Use `lhCore::setup_course_structure()` to establish the quarto structure and index from a template")
+
+  check_git_steps()
+
   open_proj <- readline('Do you wish to open the new project in RStudio? (y/n) ')
   if(tolower(open_proj) == 'y') usethis::proj_activate(repo_path)
 }

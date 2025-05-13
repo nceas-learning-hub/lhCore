@@ -29,9 +29,8 @@ Defaults to the same name as the repo.}
 If successful, returns the URL of the installed theme repository.
 }
 \description{
-Provide information about a desired Quarto theme to be applied to the course site.
-Defaults to nceas-learning-hub/lh_theme.
-}
-\examples{
-\dontrun{}
+Install or update a desired Quarto theme to be applied to the course site.
+Defaults to \code{nceas-learning-hub/lh_theme}.  This is called in \code{setup_lessons()}
+but if the theme changes down the line, this can be used to update it by pulling
+from an updated repo or a different repo.
 }
