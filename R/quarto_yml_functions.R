@@ -12,8 +12,13 @@ init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
   ### get metadata for fields
   meta <- get_course_metadata()
 
+  course_repo <- sprintf('https://github.com/%s/%s', meta["course_org"], meta["course_repo"])
+  course_url  <- sprintf('%s.github.io/%s', meta["course_org"], meta["course_repo"])
+
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- readr::read_file(qmd_yml_f_lcl) |>
+    stringr::str_replace_all("COURSE_REPO", course_repo) |>
+    stringr::str_replace_all("COURSE_URL", course_url) |>
     stringr::str_replace_all("COURSE_TITLE", meta["course_title"]) |>
     stringr::str_replace_all("COURSE_DATES", meta["course_dates"])
 
@@ -25,23 +30,21 @@ init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
 setup_quarto_yml <- function(lessons, modules, prefix = "s", overwrite = FALSE) {
   quarto_yml_file <- here::here("_quarto.yml")
 
-  ### Check that file exists, and check that COURSE_REPO and SESSION_LINKS are present
+  ### Check that file exists, and check that SESSION_LINKS are present
   if(!file.exists(quarto_yml_file)) stop("No _quarto.yml file found in current directory...")
 
   quarto_yml_raw <- readr::read_file(quarto_yml_file)
 
-  if(!overwrite & !stringr::str_detect(quarto_yml_raw, "COURSE_REPO|SESSION_LINKS")) {
-    stop("_quarto.yml: No fields for COURSE_REPO and/or SESSION_LINKS, and overwrite is FALSE - _quarto.yml file not updated")
+  if(!overwrite & !stringr::str_detect(quarto_yml_raw, "SESSION_LINKS")) {
+    stop("_quarto.yml: No fields for SESSION_LINKS, and overwrite is FALSE - _quarto.yml file not updated")
   }
 
-  ### define course repo field and lesson list
+  ### define lesson list
   meta <- get_course_metadata() ### get metadata for fields
-  course_repo <- file.path("https://github.com", meta["course_org"], meta["course_proj"])
   lesson_txt <- define_lesson_txt(lessons, modules, prefix)
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- quarto_yml_raw |>
-    stringr::str_replace_all("COURSE_REPO", course_repo) |>
     stringr::str_replace_all(" *# SESSION_LINKS", lesson_txt)
 
   ### write out updated yml file

@@ -42,6 +42,21 @@ setup_course_structure <- function(template = 'coreR', package = 'lhLessons', ov
 
 
   ################################
+  ###  setup for gha publish   ###
+  ################################
+
+  ### gitignore to ignore docs
+  gitignore_f <- system.file("course_files/gitignore_template", package = package)
+  file.copy(gitignore_f, here::here(".gitignore"), overwrite = TRUE)
+
+  gha_fs <- list.files(system.file("course_files/gha_publish", package = package),
+                       recursive = TRUE, full.names = TRUE)
+  dir.create(here::here(".github")); dir.create(here::here(".github/workflows"))
+  file.copy(gha_fs, here::here(".github/workflows"))
+
+
+
+  ################################
   ###     set up index.qmd     ###
   ################################
   index_template <- system.file("course_files/index",
@@ -67,10 +82,14 @@ setup_course_structure <- function(template = 'coreR', package = 'lhLessons', ov
       ### revisit this later!
 
   ### The banner.css should remain the same name, but the logos can change filenames
+  ### (as referenced within banner.css)
   banner_tmpl_fs <- list.files(system.file(sprintf("course_files/banner/banner_%s", tolower(template)),
                                            package = package), full.names = TRUE)
   if(length(banner_tmpl_fs) == 0) stop("No banner found for template: ", template)
-  file.copy(banner_tmpl_fs, here::here())
+
+  banner_loc_lcl <- here::here('banner')
+  if(!file.exists(banner_loc_lcl)) dir.create(banner_loc_lcl)
+  file.copy(banner_tmpl_fs, banner_loc_lcl)
 
   ################################
   ###    Install misc files    ###

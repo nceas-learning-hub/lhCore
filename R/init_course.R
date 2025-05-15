@@ -61,10 +61,9 @@ init_course <- function(course_proj,
   print(metadata_df)
 
   message("Recommended next steps: open the new project in RStudio, and then:",
-          "\n  \u2022 Edit the index.qmd to ensure it accurately describes the course",
-          "\n  \u2022 Use `lhCore::setup_course_structure()` to establish the quarto structure and index from a template")
-
-  check_git_steps()
+          "\n  \u2022 Edit the `index.qmd` to ensure it accurately describes the course",
+          "\n  \u2022 Use `lhCore::setup_course_structure()` to establish the quarto structure and index from a template",
+          "\n  \u2022 and then use `lhCore::setup_lessons()` to assemble a chosen set of lessons into a course")
 
   open_proj <- readline('Do you wish to open the new project in RStudio? (y/n) ')
   if(tolower(open_proj) == 'y') usethis::proj_activate(repo_path)
