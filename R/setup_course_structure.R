@@ -23,7 +23,7 @@
 #' }
 #' @export
 
-setup_course_structure <- function(template = 'coreR', package = 'lhLessons', overwrite = FALSE) {
+setup_course_structure <- function(template = c('lh', 'adc', 'delta', 'corer')[1], package = 'lhLessons', overwrite = FALSE) {
 
   verify_course_repo(query = 'Install course structure here?')
 
@@ -40,12 +40,12 @@ setup_course_structure <- function(template = 'coreR', package = 'lhLessons', ov
 
   init_quarto_yml(package = package, overwrite = overwrite)
 
-
   ################################
   ###  setup for gha publish   ###
   ################################
 
-  ### gitignore to ignore docs
+  ### copy GHA files and copy gitignore to ignore docs/
+
   gitignore_f <- system.file("course_files/gitignore_template", package = package)
   file.copy(gitignore_f, here::here(".gitignore"), overwrite = TRUE)
 
@@ -53,8 +53,6 @@ setup_course_structure <- function(template = 'coreR', package = 'lhLessons', ov
                        recursive = TRUE, full.names = TRUE)
   dir.create(here::here(".github")); dir.create(here::here(".github/workflows"))
   file.copy(gha_fs, here::here(".github/workflows"))
-
-
 
   ################################
   ###     set up index.qmd     ###
@@ -77,19 +75,9 @@ setup_course_structure <- function(template = 'coreR', package = 'lhLessons', ov
   ################################
 
   ### for now, just keep the same theme for all regardless of template
-  install_theme(org = 'nceas-learning-hub', repo = 'lh_theme', theme = 'lh_theme')
+  install_theme(org = 'nceas-learning-hub', theme = template)
       ### NOTE: this copies folders from the theme repo, rather than quarto install -
       ### revisit this later!
-
-  ### The banner.css should remain the same name, but the logos can change filenames
-  ### (as referenced within banner.css)
-  banner_tmpl_fs <- list.files(system.file(sprintf("course_files/banner/banner_%s", tolower(template)),
-                                           package = package), full.names = TRUE)
-  if(length(banner_tmpl_fs) == 0) stop("No banner found for template: ", template)
-
-  banner_loc_lcl <- here::here('banner')
-  if(!file.exists(banner_loc_lcl)) dir.create(banner_loc_lcl)
-  file.copy(banner_tmpl_fs, banner_loc_lcl)
 
   ################################
   ###    Install misc files    ###
@@ -98,7 +86,7 @@ setup_course_structure <- function(template = 'coreR', package = 'lhLessons', ov
   ### Any other files in the course_files folder should be copied to the root of the course
   misc_fs <- list.files(system.file("course_files", package = package),
                         full.names = TRUE)
-  misc_fs <- misc_fs[!dir.exists(misc_fs) & basename(misc_fs) != '_quarto_template.yml']
+  misc_fs <- misc_fs[!dir.exists(misc_fs) & !stringr::str_detect(basename(misc_fs), '_quarto_template.yml|gitignore')]
   file.copy(misc_fs, here::here())
 
 

@@ -7,7 +7,7 @@
 get_lessons_version(pkg, quiet = FALSE)
 }
 \arguments{
-\item{pkg}{The name of the lessons package (e.g., "lhLessons")}
+\item{pkg}{The name of the lessons package (e.g., "lhLessons") currently installed.}
 
 \item{quiet}{Suppress display of the version as a message?}
 }

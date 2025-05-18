@@ -12,9 +12,9 @@
 #'
 #' @examples \dontrun{available_lessons(lessons = c('r_functions.qmd', 'this_package_does_not_exist.Rmd'))}
 
-available_lessons <- function(lessons = NULL, pkg = 'coreRlessons', quiet = TRUE) {
+available_lessons <- function(lessons = NULL, pkg = 'lhLessons', quiet = TRUE) {
   v <- utils::packageVersion(pkg) |> paste(collapse = '.')
-  if(!quiet) message('Retrieving available lessons from coreRlessons version ', v)
+  if(!quiet) message('Retrieving available lessons from ', pkg, ' version ', v)
 
   l_vec <- list.files(system.file('lessons', package = pkg),
                       full.names = TRUE)

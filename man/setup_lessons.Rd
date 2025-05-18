@@ -29,7 +29,7 @@ this argument will take precedence.}
 \item{overwrite}{If there is already an existing lessons structure, and
 \code{overwrite = FALSE}, will return an error.  If the user wishes to create
 a new lesson structure, then \code{overwrite = TRUE} will remove the existing
-structure in its entirety and create a new structure based on the lesson names.}
+lesson structure in its entirety and create a new structure}
 }
 \description{
 Create the structure necessary to implement an ordered set of lessons in the Quarto book format.

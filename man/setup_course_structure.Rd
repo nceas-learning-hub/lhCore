@@ -5,7 +5,7 @@
 \title{Set up the basic structure of a course}
 \usage{
 setup_course_structure(
-  template = "coreR",
+  template = c("lh", "adc", "delta", "corer")[1],
   package = "lhLessons",
   overwrite = FALSE
 )

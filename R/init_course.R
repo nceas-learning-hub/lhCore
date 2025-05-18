@@ -51,7 +51,7 @@ init_course <- function(course_proj,
   ### Add metadata file - overwrite NULLs for title and description
   if(is.null(course_title)) course_title <- course_proj
   if(is.null(course_desc))  course_desc <- course_title
-  if(is.null(course_dates)) course_dates <- '!!course dates!!'
+  if(is.null(course_dates)) course_dates <- '... course dates ...'
 
   metadata_df <- data.frame(
     field = c('course_proj', 'course_org', 'course_title', 'course_desc', 'course_dates'),

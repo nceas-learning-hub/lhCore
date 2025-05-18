@@ -4,7 +4,7 @@
 \alias{available_lessons}
 \title{Get a dataframe of available lessons}
 \usage{
-available_lessons(lessons = NULL, pkg = "coreRlessons", quiet = TRUE)
+available_lessons(lessons = NULL, pkg = "lhLessons", quiet = TRUE)
 }
 \arguments{
 \item{lessons}{An optional character vector of lessons to query whether

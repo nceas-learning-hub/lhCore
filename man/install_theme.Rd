@@ -5,32 +5,27 @@
 \title{Install a Quarto theme}
 \usage{
 install_theme(
-  user = NULL,
   org = "nceas-learning-hub",
-  repo = "lh_theme",
-  theme = NULL
+  theme = c("lh", "adc", "delta", "corer")[1]
 )
 }
 \arguments{
-\item{user}{If theme is in a user repository, provide a user name (default \code{NULL}).  If \code{NULL},
-the organization name will be used.  If a \code{user} repository is desired, set
-\code{org} to \code{NULL} otherwise \code{org} will supercede \code{user}.}
-
-\item{org}{If the theme is in an organization repository, provide the organization name.
-Default: \code{nceas-learning-hub}.  If a \code{user} repo is desired, set \code{org} to \code{NULL}.}
-
-\item{repo}{The repository name where the Quarto extension can be found.  Default:
-Learning Hub theme \code{lh_theme}}
+\item{org}{Organization repository where theme extension is located.
+Default: \code{nceas-learning-hub}.  Extension repo is called \code{theme_X} where \code{X} is
+one of the available themes.}
 
 \item{theme}{The name of the theme within the \verb{_extensions} folder in the repository.
-Defaults to the same name as the repo.}
+Currently, one of \code{lh}, \code{adc}, \code{delta}, \code{corer}.}
 }
 \value{
-If successful, returns the URL of the installed theme repository.
+If successful, returns the extension location (org/theme repo)
 }
 \description{
 Install or update a desired Quarto theme to be applied to the course site.
 Defaults to \code{nceas-learning-hub/lh_theme}.  This is called in \code{setup_lessons()}
 but if the theme changes down the line, this can be used to update it by pulling
 from an updated repo or a different repo.
+}
+\details{
+Note this can also be done manually in the Terminal, using \verb{quarto add <org name>/<theme extension repo>}.
 }
