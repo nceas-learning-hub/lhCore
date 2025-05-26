@@ -29,7 +29,7 @@ update_lessons <- function(lessons = "all", pkg = "coreRlessons", version = NULL
   ### copy over into sections folder, overwriting old versions
 
   installed_version <- get_lessons_version(pkg, quiet = TRUE)
-  if(installed_version == version) {
+  if(installed_version == version & !is.null(version)) {
     stop("Requested version (", version, ") is identical to installed version (", installed_version, ")...")
   }
 

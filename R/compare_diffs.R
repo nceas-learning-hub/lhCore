@@ -18,6 +18,8 @@
 #'     or bare lesson name) to check against the lesson package.  Default (`NULL`)
 #'     will find all local files with `sXX_` prefix and check them.
 #' @param pkg A character name of the lessons package, default `lhLessons`.
+#' @param org Character Github org (or user) where the package lives, default `nceas-learning-hub`.
+#' @param pkg_version Character Version tag for package, default NULL indicates latest.
 #' @param branch A character name of the branch to be checked.  Currently only checks against `main`.
 #' @param prefix A character indicator of the expected prefix letter for lesson files.
 #' @param file_out The location in the current repository where the results will
@@ -32,7 +34,10 @@
 #'   compare_diffs(lessons = c('git_setup', 's03_r_programming_introduction.qmd'))
 #' }
 
-compare_diffs <- function(lessons = NULL, pkg = 'lhLessons', branch = 'main', prefix = 's', file_out = 'git_diff.txt') {
+compare_diffs <- function(lessons = NULL,
+                          pkg = 'lhLessons', org = 'nceas-learning-hub',
+                          pkg_version = NULL, branch = 'main',
+                          prefix = 's', file_out = 'git_diff.txt') {
 
   if(is.null(lessons)) {
     ### if NULL, check *all* local lessons - identified by appropriate prefix
@@ -50,10 +55,14 @@ compare_diffs <- function(lessons = NULL, pkg = 'lhLessons', branch = 'main', pr
 
   ### Check local lessons against metadata.  Metadata written in setup_lessons,
   ### so any local lessons not in meta might indicate new lessons.
-  lesson_no_meta <- lessons_df$bare[!lessons_df$bare %in% lessons_meta$lesson]
-  if(length(lesson_no_meta) > 0) {
+  lesson_no_meta <- lessons_df[!lessons_df$bare %in% lessons_meta$lesson, ]
+  if(nrow(lesson_no_meta) > 0) {
     warning('Lesson(s) detected in course but not listed in metadata: potentially new?',
-            paste('\n  \u2022 ', lesson_no_meta, collapse = '\n  \u2022'))
+            paste('\n  \u2022 ', lesson_no_meta$bare, collapse = '\n  \u2022'))
+    new_lesson_df <- data.frame(file_remote = NA,
+                                file_local = lesson_no_meta$lesson,
+                                result = 'New file detected',
+                                status = 2)
   }
 
   ### Check that lessons all come from the desired package!
@@ -70,6 +79,9 @@ compare_diffs <- function(lessons = NULL, pkg = 'lhLessons', branch = 'main', pr
 
   ### process git diffs, write to .txt, and report changed lessons to user
   diffs_df <- purrr::map2_df(.x = lessons_compare$lesson_file, .y = lessons_compare$lesson_local, .f = git_diff)
+
+  ### append new lessons, if they have been detected
+  if(exists('new_lesson_df')) diffs_df <- rbind(diffs_df, new_lesson_df)
 
   diffs_txt <- paste(basename(diffs_df$file_local), '\n\n', diffs_df$result,
                      collapse = '\n\n\n====================\n\n\n')

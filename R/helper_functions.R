@@ -6,7 +6,7 @@
 
 get_course_metadata<- function() {
   ### get metadata from metadata_course.csv
-  metadata_df <- readr::read_csv(here::here("metadata_course.csv"))
+  metadata_df <- readr::read_csv(here::here("metadata_course.csv"), show_col_types = FALSE)
   meta <- metadata_df$value
   names(meta) <- metadata_df$field
 
