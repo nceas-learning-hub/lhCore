@@ -2,7 +2,7 @@
 #'
 #' Create the structure necessary to implement an ordered set of lessons in the Quarto book format.
 #' The user provides a character vector of lesson names (filenames, bare or with `.qmd` extension);
-#' these and associated materials (images, data) are copied from `coreRlessons` package into the
+#' these and associated materials (images, data) are copied from `lhLessons` package into the
 #' course project (created with `init_course()`).  Sets up the index.qmd, _quarto.yml, and some
 #' additional files.
 #'
@@ -11,7 +11,7 @@
 #'     (bare or .qmd extension) of the lessons, in order; optionally, a named
 #'     character vector where the names are course modules (e.g., "Day 1", "Day 2").
 #'     Alternately, a data.frame with columns "module" and "lesson", similar to the
-#'     named character vector.
+#'     named character vector; see `lhLessons::example_course`.
 #' @param package The name of the course lessons package to use.
 #' @param modules An additional way to provide module information for the lessons:
 #'     a vector of module names that matches the length of the lessons vector. Caution:
@@ -39,7 +39,7 @@
 #'               modules = rep(c("day 1", "day 2"), each = 3))
 #'
 #' ### modules and course as dataframe
-#' example_course <- coreRlessons::example_course
+#' example_course <- lhLessons::example_course
 #' head(example_course, 3)
 #' #   module                        lesson
 #' # 1  Day 1    r_programming_introduction
@@ -75,7 +75,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   lessons <- stringr::str_remove(lessons, '\\..md$')
 
 
-  ### check that all lessons are in coreRlessons
+  ### check that all lessons are in lhLessons
   lessons_available <- available_lessons(pkg = package)$lesson
   lessons_missing <- lessons[!lessons %in% lessons_available]
   if(length(lessons_missing) > 0) stop("Some lessons are not found in the ', package, ' package:",
@@ -84,11 +84,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   ### Set up _quarto.yml with appropriate links to lessons
   if(overwrite) stop('in setup_lessons(), need to add facility to remove old lessons from _quarto.yml and old files before overwriting!')
   ### set up _quarto.yml with links to sessions (other info in setup_course_structure.R)
-  setup_quarto_yml(lessons, modules, prefix = lesson_prefix, overwrite)
+  setup_quarto_yml(lessons, modules, overwrite)
 
   ### copy over lesson files from lessons package to current project: lessons, images, data, _extensions
-  lesson_prefix <- "s" ### appends sXX_ to start of lesson filenames
-  lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".", prefix = lesson_prefix)
+  lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".")
 
   ### copy over lesson-associated folders from lessons package to current project: lessons, images, data
   copy_folders(lessons, from = "lesson_images", to = "images", pkg = package)
@@ -113,11 +112,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 
 ### not exported!
 
-copy_lessons <- function(lessons, from, to = ".", prefix, pkg) {
+copy_lessons <- function(lessons, from, to = ".", pkg) {
   ### from is the directory to copy lessons from (inside the lessons package);
   ### to is the directory to copy the lessons to (inside the course repository)
   ### lessons is the list of lesson filenames, without extensions
-  ### prefix is appended to the start of the filename to sort in order (default "s" for session)
 
   ### create subfolder as needed
   subfolder <- here::here(to)
@@ -128,7 +126,7 @@ copy_lessons <- function(lessons, from, to = ".", prefix, pkg) {
 
   fs_to_copy <- fs_avail$lesson_file[order(match(fs_avail$lesson, lessons))]
 
-  fs_out <- sprintf('%s/%s%02d_%s', subfolder, prefix, 1:length(lessons), basename(fs_to_copy))
+  fs_out <- sprintf('%s/s%02d_%s', subfolder, 1:length(lessons), basename(fs_to_copy))
 
   if(length(fs_to_copy) > 0) {
     file.copy(fs_to_copy, fs_out)
@@ -161,13 +159,13 @@ copy_folders <- function(lessons, from, to, pkg) {
 }
 
 
-define_lesson_txt <- function(lessons, modules, prefix) {
+define_lesson_txt <- function(lessons, modules) {
 
   if(is.null(modules)) {
     ### if lessons is not a named vector, simple case
     ### `lessons` vector is bare filenames, no extension - standardize to .qmd
-    lesson_txt <- sprintf("      - %s%02d_%s.qmd",
-                           prefix, 1:length(lessons), lessons) |>
+    lesson_txt <- sprintf("      - s%02d_%s.qmd",
+                           1:length(lessons), lessons) |>
       paste(collapse = "\n")
   } else {
     message("Module names detected...")
@@ -176,8 +174,8 @@ define_lesson_txt <- function(lessons, modules, prefix) {
     mod_vec <- mod_names
     names(mod_vec) <- mod_names
 
-    ### prefix and number the lessons first; attach module names
-    lsn_path <- sprintf('%s%02d_%s', prefix, 1:length(lessons), lessons)
+    ### number the lessons first; attach module names
+    lsn_path <- sprintf('s%02d_%s', 1:length(lessons), lessons)
     names(lsn_path) <- names(lessons)
 
     ### loop over modules to create a unique set for each, with part and chapter

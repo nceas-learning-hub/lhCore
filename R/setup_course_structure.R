@@ -6,8 +6,8 @@
 #' from the `lhLessons` package.
 #'
 #' @param template The name of the course template to use.  This should be a character
-#'     length 1 object.  Default template will be `coreR` but other templates may
-#'     include `ADC`, `Delta`, `LTER`, etc.  Template affects the appearance of the
+#'     length 1 object.  Default template will be "lh" ("Learning Hub") but other templates may
+#'     include "adc", "delta", "lter", "corer", etc.  Template affects the appearance of the
 #'     course book (scss, logos), and the default index boilerplate.
 #' @param package The name of the course lessons package to use.
 #' @param overwrite If there is already an existing course structure, and
@@ -19,11 +19,13 @@
 #'
 #' @examples
 #' \dontrun{
-#'   setup_course_structure(template = 'coreR')
+#'   setup_course_structure(template = 'adc')
 #' }
 #' @export
 
-setup_course_structure <- function(template = c('lh', 'adc', 'delta', 'corer')[1], package = 'lhLessons', overwrite = FALSE) {
+setup_course_structure <- function(template = c('lh', 'adc', 'delta', 'corer')[1],
+                                   package = 'lhLessons',
+                                   overwrite = FALSE) {
 
   verify_course_repo(query = 'Install course structure here?')
 

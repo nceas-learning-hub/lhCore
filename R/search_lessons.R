@@ -5,7 +5,7 @@
 #'
 #' @param query A character string to search across lessons in the given
 #'     package.  Regular expressions are allowed.
-#' @param pkg The package to query for lesson availability (default `coreRlessons`)
+#' @param pkg The package to query for lesson availability (default `lhLessons`)
 #'
 #' @return A data frame containing the file names (.qmd) of lessons
 #'     from the given package that match the search query.
@@ -13,7 +13,7 @@
 #'
 #' @examples \dontrun{search_lessons(query = "github"))}
 
-search_lessons <- function(query, pkg = 'coreRlessons') {
+search_lessons <- function(query, pkg = 'lhLessons') {
   v <- get_lessons_version(pkg)
   message('Searching lessons from ', pkg, ' version ', v)
 

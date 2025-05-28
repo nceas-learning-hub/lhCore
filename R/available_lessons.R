@@ -2,11 +2,11 @@
 #'
 #' @param lessons An optional character vector of lessons to query whether
 #'     specific lessons are available
-#' @param pkg The package to query for lesson availability (default `coreRlessons`)
+#' @param pkg The package to query for lesson availability (default `lhLessons`)
 #' @param quiet Suppress messages?
 #'
 #' @return A data frame containing the file names (.qmd) of all (or selected)
-#'     lessons from the coreRlessons package.  Eventually, including file title, date, and
+#'     lessons from the lhLessons package.  Eventually, including file title, date, and
 #'     author (if available in the .qmd)
 #' @export
 #'

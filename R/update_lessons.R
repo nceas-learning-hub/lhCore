@@ -1,4 +1,4 @@
-#' Update lessons in a coreR course
+#' Update lessons in a lhCore course
 #'
 #' @param lessons A vector of specific lessons to be updated, based on file
 #'     names (bare or with `.qmd` extension).  If lesson names don't match
@@ -6,8 +6,8 @@
 #'     will update all available lessons, i.e., those whose lesson names match
 #'     those in the source book.  Customized lessons, whose names do not match
 #'     those in the source book, will not be updated, even with `version = 'all'`.
-#' @param pkg Name of the package where lessons are curated, default "coreRlessons"
-#' @param version A version of the coreR package from which the updated lessons
+#' @param pkg Name of the package where lessons are curated, default "lhLessons"
+#' @param version A version of the lhCore package from which the updated lessons
 #'     should be pulled.  `version` can be given as a commit hash, a tag, a
 #'     version, or a date.
 #'
@@ -18,14 +18,14 @@
 #' # update_lessons(lessons = c("git-github-intro", "r-creating-packages.qmd"),
 #' #                version = "v0.0.1")
 
-update_lessons <- function(lessons = "all", pkg = "coreRlessons", version = NULL) {
+update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL) {
   ### placeholder - give a vector of lesson names, optionally give a version tag
   ### if version tag is NULL use latest otherwise use whatever the user supplied
   ### in the `@ref` portion - could be a commit, tag, branch name
-  ### install_github("nceas-learning-hub", "coreRlessons@v0.1.1")
+  ### install_github("nceas-learning-hub", "lhLessons@v0.1.1")
 
-  ### if version is not current, install coreRlessons from requested version
-  ### identify lessons to be updated - which match the names in coreRlessons at this version
+  ### if version is not current, install lhLessons from requested version
+  ### identify lessons to be updated - which match the names in lhLessons at this version
   ### copy over into sections folder, overwriting old versions
 
   installed_version <- get_lessons_version(pkg, quiet = TRUE)
@@ -115,7 +115,7 @@ update_lessons <- function(lessons = "all", pkg = "coreRlessons", version = NULL
 ### support functions
 
 update_folder <- function(lessons, from, to, tmp_lib) {
-  ### from is the directory to copy lessons from (inside the coreRlessons package);
+  ### from is the directory to copy lessons from (inside the lhLessons package);
   ### to is the directory to copy the lessons to (inside the course repository)
   ### lessons is the list of lesson filenames;
 
@@ -123,8 +123,8 @@ update_folder <- function(lessons, from, to, tmp_lib) {
   subfolder <- here::here(to)
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
-  ### copy over folders and files from coreRlessons to current project
-  fs_available <- list.files(system.file(from, package = "coreRlessons", lib.loc = tmp_lib), full.names = TRUE)
+  ### copy over folders and files from lhLessons to current project
+  fs_available <- list.files(system.file(from, package = "lhLessons", lib.loc = tmp_lib), full.names = TRUE)
   fs_to_copy <- fs_available[basename(fs_available) %in% lessons]
 
   if(length(fs_to_copy) > 0) {
