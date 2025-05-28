@@ -12,8 +12,8 @@ setup_course_structure(
 }
 \arguments{
 \item{template}{The name of the course template to use.  This should be a character
-length 1 object.  Default template will be \code{coreR} but other templates may
-include \code{ADC}, \code{Delta}, \code{LTER}, etc.  Template affects the appearance of the
+length 1 object.  Default template will be "lh" ("Learning Hub") but other templates may
+include "adc", "delta", "lter", "corer", etc.  Template affects the appearance of the
 course book (scss, logos), and the default index boilerplate.}
 
 \item{package}{The name of the course lessons package to use.}
@@ -31,6 +31,6 @@ from the \code{lhLessons} package.
 }
 \examples{
 \dontrun{
-  setup_course_structure(template = 'coreR')
+  setup_course_structure(template = 'adc')
 }
 }

@@ -56,7 +56,7 @@ init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
   readr::write_file(quarto_yml_txt, qmd_yml_f_lcl)
 }
 
-setup_quarto_yml <- function(lessons, modules, prefix, overwrite = FALSE) {
+setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
   quarto_yml_file <- here::here("_quarto.yml")
 
   ### Check that file exists, and check that SESSION_LINKS are present
@@ -73,7 +73,7 @@ setup_quarto_yml <- function(lessons, modules, prefix, overwrite = FALSE) {
   ### * remove the corresponding lesson files
 
   ### define lesson list
-  lesson_txt <- define_lesson_txt(lessons, modules, prefix)
+  lesson_txt <- define_lesson_txt(lessons, modules)
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- quarto_yml_raw |>

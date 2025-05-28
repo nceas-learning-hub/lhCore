@@ -4,13 +4,13 @@
 \alias{search_lessons}
 \title{Search available lessons using partial matching}
 \usage{
-search_lessons(query, pkg = "coreRlessons")
+search_lessons(query, pkg = "lhLessons")
 }
 \arguments{
 \item{query}{A character string to search across lessons in the given
 package.  Regular expressions are allowed.}
 
-\item{pkg}{The package to query for lesson availability (default \code{coreRlessons})}
+\item{pkg}{The package to query for lesson availability (default \code{lhLessons})}
 }
 \value{
 A data frame containing the file names (.qmd) of lessons

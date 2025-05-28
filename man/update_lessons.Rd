@@ -2,9 +2,9 @@
 % Please edit documentation in R/update_lessons.R
 \name{update_lessons}
 \alias{update_lessons}
-\title{Update lessons in a coreR course}
+\title{Update lessons in a lhCore course}
 \usage{
-update_lessons(lessons = "all", pkg = "coreRlessons", version = NULL)
+update_lessons(lessons = "all", pkg = "lhLessons", version = NULL)
 }
 \arguments{
 \item{lessons}{A vector of specific lessons to be updated, based on file
@@ -14,14 +14,14 @@ will update all available lessons, i.e., those whose lesson names match
 those in the source book.  Customized lessons, whose names do not match
 those in the source book, will not be updated, even with \code{version = 'all'}.}
 
-\item{pkg}{Name of the package where lessons are curated, default "coreRlessons"}
+\item{pkg}{Name of the package where lessons are curated, default "lhLessons"}
 
-\item{version}{A version of the coreR package from which the updated lessons
+\item{version}{A version of the lhCore package from which the updated lessons
 should be pulled.  \code{version} can be given as a commit hash, a tag, a
 version, or a date.}
 }
 \description{
-Update lessons in a coreR course
+Update lessons in a lhCore course
 }
 \examples{
 # update_lessons(lessons = c("git-github-intro", "r-creating-packages.qmd"),

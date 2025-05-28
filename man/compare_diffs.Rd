@@ -7,6 +7,8 @@
 compare_diffs(
   lessons = NULL,
   pkg = "lhLessons",
+  org = "nceas-learning-hub",
+  pkg_version = NULL,
   branch = "main",
   prefix = "s",
   file_out = "git_diff.txt"
@@ -18,6 +20,10 @@ or bare lesson name) to check against the lesson package.  Default (\code{NULL})
 will find all local files with \code{sXX_} prefix and check them.}
 
 \item{pkg}{A character name of the lessons package, default \code{lhLessons}.}
+
+\item{org}{Character Github org (or user) where the package lives, default \code{nceas-learning-hub}.}
+
+\item{pkg_version}{Character Version tag for package, default NULL indicates latest.}
 
 \item{branch}{A character name of the branch to be checked.  Currently only checks against \code{main}.}
 

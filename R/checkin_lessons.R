@@ -12,14 +12,15 @@
 #' Commits then pushes changes back to Github
 #'
 #' @param lessons A character vector or dataframe of lessons to be checked in
-#' @param pkg
-#' @param org
-#' @param branch
+#' @param pkg The package that contains the lessons; here this represents the
+#'     repository name for the package.  Default "lhLessons"
+#' @param org The GitHub organization where the lessons package repo lives.  Default "nceas-learning-hub"
+#' @param branch Optional, a branch name to push lesson changes to.  Default `NULL`
+#'     will result in the course project name (contained in the `metadata_course.csv` file) being
+#'     used as the branch name
 #'
-#' @returns
 #' @export
-#'
-#' @examples
+
 checkin_lessons <- function(lessons = NULL,
                             pkg = 'lhLessons',
                             org = 'nceas-learning-hub',
@@ -194,5 +195,5 @@ copy_files_to_checkin <- function(lessons_df, folder, tmp_dir) {
   x <- file.copy(from = from_fs, to = to_dir, overwrite = TRUE, recursive = TRUE, copy.date = TRUE)
 
   ### one last check!
-  if(any(!x)) stop('Uh oh, something failed to copy:', paste0('\n\u2022  ', basename(from[!x])))
+  if(any(!x)) stop('Uh oh, something failed to copy:', paste0('\n\u2022  ', basename(from_fs[!x])))
 }

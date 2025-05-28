@@ -17,7 +17,7 @@ character vector or data.frame.  A character vector containing the names
 (bare or .qmd extension) of the lessons, in order; optionally, a named
 character vector where the names are course modules (e.g., "Day 1", "Day 2").
 Alternately, a data.frame with columns "module" and "lesson", similar to the
-named character vector.}
+named character vector; see \code{lhLessons::example_course}.}
 
 \item{package}{The name of the course lessons package to use.}
 
@@ -34,7 +34,7 @@ lesson structure in its entirety and create a new structure}
 \description{
 Create the structure necessary to implement an ordered set of lessons in the Quarto book format.
 The user provides a character vector of lesson names (filenames, bare or with \code{.qmd} extension);
-these and associated materials (images, data) are copied from \code{coreRlessons} package into the
+these and associated materials (images, data) are copied from \code{lhLessons} package into the
 course project (created with \code{init_course()}).  Sets up the index.qmd, _quarto.yml, and some
 additional files.
 }
@@ -53,7 +53,7 @@ setup_lessons(lessons = available_lessons()$lesson[1:6],
               modules = rep(c("day 1", "day 2"), each = 3))
 
 ### modules and course as dataframe
-example_course <- coreRlessons::example_course
+example_course <- lhLessons::example_course
 head(example_course, 3)
 #   module                        lesson
 # 1  Day 1    r_programming_introduction
