@@ -16,7 +16,29 @@ publish_course <- function() {
 
   if(!git_ready) stop('Course must be git- and github-enabled to publish!')
 
+  ### check whether gh-pages exists; if not, set it up and connect to origin
+  setup_gh_pages_branch()
+
   ### call Quarto command to set up publishing from gh-pages branch
   system('quarto publish gh-pages --no-prompt')
 
+}
+
+setup_gh_pages_branch <- function() {
+  ### set up a gh-pages branch if not already
+  branch_check <- system('git branch -a', intern = TRUE) |>
+    stringr::str_remove_all('^.+/|^\\* ')
+  if(!"gh-pages" %in% branch_check) {
+    x <- system('git checkout -b gh-pages')
+    # if(x != 0) {
+    #   stop('Oops, an error occurred while trying to create gh-pages branch!')
+    # }
+
+    ### Connect local to origin
+    x <- system('git push -u origin gh-pages')
+  }
+
+  ### should we worry about the case where local gh-pages but not connected to origin?
+
+  x <- system('git checkout main') ### set back to main after!
 }
