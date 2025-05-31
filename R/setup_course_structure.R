@@ -99,8 +99,8 @@ setup_course_structure <- function(template = c('lh', 'adc', 'delta', 'corer')[1
   message("To render the course book, restart RStudio to activate the Build tab.")
   message("Recommended next steps: ",
           "\n  \u2022 Edit the index.qmd to ensure it accurately describes the course",
-          "\n  \u2022 Use `lhCore::available_lessons(<lesson package>)` to see the lesson catalog from the lesson package",
-          "\n  \u2022 Use `lhCore::setup_lessons(<lessons>)` to install the lessons in the course")
+          "\n  \u2022 Use `available_lessons()` to see the lesson catalog from the lesson package",
+          "\n  \u2022 Use `setup_lessons(<lessons>)` to install the lessons in the course")
   check_git_steps()
 
 }

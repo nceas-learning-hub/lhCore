@@ -44,13 +44,18 @@ init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
 
   course_repo <- sprintf('https://github.com/%s/%s', meta["course_org"], meta["course_proj"])
   course_url  <- sprintf('%s.github.io/%s', meta["course_org"], meta["course_proj"])
+  if(meta["course_dates"] == '') {
+    ### empty date field; title is all
+    course_title = meta["course_title"]
+  } else {
+    course_title = sprintf("%s (%s)", meta["course_title"], meta["course_dates"])
+  }
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- readr::read_file(qmd_yml_f_lcl) |>
     stringr::str_replace_all("COURSE_REPO", course_repo) |>
     stringr::str_replace_all("COURSE_URL", course_url) |>
-    stringr::str_replace_all("COURSE_TITLE", meta["course_title"]) |>
-    stringr::str_replace_all("COURSE_DATES", meta["course_dates"])
+    stringr::str_replace_all("COURSE_TITLE", course_title)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, qmd_yml_f_lcl)

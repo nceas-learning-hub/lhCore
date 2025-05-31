@@ -51,7 +51,7 @@ init_course <- function(course_proj,
   ### Add metadata file - overwrite NULLs for title and description
   if(is.null(course_title)) course_title <- course_proj
   if(is.null(course_desc))  course_desc <- course_title
-  if(is.null(course_dates)) course_dates <- '... course dates ...'
+  if(is.null(course_dates)) course_dates <- ''
 
   metadata_df <- data.frame(
     field = c('course_proj', 'course_org', 'course_title', 'course_desc', 'course_dates'),
@@ -61,9 +61,8 @@ init_course <- function(course_proj,
   print(metadata_df)
 
   message("Recommended next steps: open the new project in RStudio, and then:",
-          "\n  \u2022 Edit the `index.qmd` to ensure it accurately describes the course",
-          "\n  \u2022 Use `lhCore::setup_course_structure()` to establish the quarto structure and index from a template",
-          "\n  \u2022 and then use `lhCore::setup_lessons()` to assemble a chosen set of lessons into a course")
+          "\n  \u2022 Use `setup_course_structure()` to establish the quarto structure and index from a template",
+          "\n  \u2022 and then use `setup_lessons()` to assemble a chosen set of lessons into a course")
 
   open_proj <- readline('Do you wish to open the new project in RStudio? (y/n) ')
   if(tolower(open_proj) == 'y') usethis::proj_activate(repo_path)
