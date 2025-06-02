@@ -40,5 +40,8 @@ setup_gh_pages_branch <- function() {
 
   ### should we worry about the case where local gh-pages but not connected to origin?
 
-  x <- system('git checkout main') ### set back to main after!
+  ### in case there's master but no main...
+  main_branch <- ifelse("main" %in% branch_check, "main", "master")
+
+  x <- system(sprintf('git checkout %s', main_branch)) ### set back to main after!
 }
