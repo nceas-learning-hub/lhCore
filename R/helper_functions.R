@@ -44,7 +44,7 @@ init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
 
   course_repo <- sprintf('https://github.com/%s/%s', meta["course_org"], meta["course_proj"])
   course_url  <- sprintf('%s.github.io/%s', meta["course_org"], meta["course_proj"])
-  if(meta["course_dates"] == '') {
+  if(is.na(meta["course_dates"])) {
     ### empty date field; title is all
     course_title = meta["course_title"]
   } else {
