@@ -20,7 +20,13 @@ publish_course <- function() {
   setup_gh_pages_branch()
 
   ### call Quarto command to set up publishing from gh-pages branch
-  system('quarto publish gh-pages --no-prompt')
+  # system('quarto publish gh-pages --no-prompt')
+
+  ### append a space to index.qmd, then commit it, to force GHA to publish
+  write(' ', file = 'index.qmd', append = TRUE)
+  system('git add --all')
+  system('git commit -m "force GHA initial publication"')
+  system('git push')
 
 }
 
