@@ -129,7 +129,10 @@ check_git_steps <- function() {
       message("For Mac/Linux, in R console, try:",
               " \n  \u2022 usethis::use_git_config(user.name = \"my_username\", user.email = \"my_email@ucsb.edu\")")
     }
+<<<<<<< HEAD
     return(invisible(FALSE))
+=======
+>>>>>>> 2ebea6aa11df3933b610348247ffd31abdb6358e
   }
   return(invisible(TRUE))
 
