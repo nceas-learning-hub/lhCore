@@ -112,6 +112,25 @@ check_git_steps <- function() {
             "')` to connect the project with Github!\n")
     return(invisible(FALSE))
   }
+
+  ### Check that git config contains user identity - use local values
+  ### This should help avoid problem with Windows using different locs for configs!
+  git_config <- system('git config --list', intern = TRUE)
+  config_ok  <- git_config[stringr::str_detect(git_config, "user.name|user.email")]
+  if(length(config_ok) >= 2) {
+    message("User name and email in Git config: \n  \u2022 ", paste0(config_ok, collapse = "\n  \u2022 "))
+  } else {
+    message("User name and/or email not detected in Git config!")
+    if(.Platform$OS.type == 'windows') {
+      message("For Windows operating system, in R console, try:",
+              " \n  \u2022 system('git config --global user.name \"my_github_username\"')",
+              " \n  \u2022 system('git config --global user.email \"my_email@ucsb.edu\"')")
+    } else {
+      message("For Mac/Linux, in R console, try:",
+              " \n  \u2022 usethis::use_git_config(user.name = \"my_username\", user.email = \"my_email@ucsb.edu\")")
+    }
+    return(invisible(FALSE))
+  }
   return(invisible(TRUE))
 
 }
