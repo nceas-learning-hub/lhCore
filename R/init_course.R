@@ -57,8 +57,14 @@ init_course <- function(course_proj,
     field = c('course_proj', 'course_org', 'course_title', 'course_desc', 'course_dates'),
     value = c( course_proj,   course_org,   course_title,   course_desc,   course_dates))
   readr::write_csv(metadata_df, file.path(repo_path, 'metadata_course.csv'))
-  message("Metadata file created at ", normalizePath(repo_path), '/metadata_course.csv')
-  print(metadata_df)
+  # message("Metadata file created at ", normalizePath(repo_path), '/metadata_course.csv')
+  # print(metadata_df)
+
+  ### include setup_course_structure here, with arg for template
+
+  ### include git and github initialization here, unless flagged as FALSE
+
+  ### setup gh-pages branch and GHA file here
 
   message("Recommended next steps: open the new project in RStudio, and then:",
           "\n  \u2022 Edit the `index.qmd` to ensure it accurately describes the course",
