@@ -82,7 +82,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
                                        paste0("\n\u25CF ", lessons_missing))
 
   ### Set up _quarto.yml with appropriate links to lessons
-  if(overwrite) stop('in setup_lessons(), need to add facility to remove old lessons from _quarto.yml and old files before overwriting!')
+  if(overwrite) {
+    stop("in setup_lessons(), need to add functionality to remove old lessons from _quarto.yml and old files before overwriting!",
+         "\nMeanwhile, manually delete any installed lesson files, then rerun the function with overwrite = FALSE (default) ")
+  }
   ### set up _quarto.yml with links to sessions (other info in setup_course_structure.R)
   setup_quarto_yml(lessons, modules, overwrite)
 

@@ -44,13 +44,18 @@ init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
 
   course_repo <- sprintf('https://github.com/%s/%s', meta["course_org"], meta["course_proj"])
   course_url  <- sprintf('%s.github.io/%s', meta["course_org"], meta["course_proj"])
+  if(is.na(meta["course_dates"])) {
+    ### empty date field; title is all
+    course_title = meta["course_title"]
+  } else {
+    course_title = sprintf("%s (%s)", meta["course_title"], meta["course_dates"])
+  }
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- readr::read_file(qmd_yml_f_lcl) |>
     stringr::str_replace_all("COURSE_REPO", course_repo) |>
     stringr::str_replace_all("COURSE_URL", course_url) |>
-    stringr::str_replace_all("COURSE_TITLE", meta["course_title"]) |>
-    stringr::str_replace_all("COURSE_DATES", meta["course_dates"])
+    stringr::str_replace_all("COURSE_TITLE", course_title)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, qmd_yml_f_lcl)
@@ -107,6 +112,26 @@ check_git_steps <- function() {
             "')` to connect the project with Github!\n")
     return(invisible(FALSE))
   }
+
+  ### Check that git config contains user identity - use local values
+  ### This should help avoid problem with Windows using different locs for configs!
+  git_config <- system('git config --list', intern = TRUE)
+  config_ok  <- git_config[stringr::str_detect(git_config, "user.name|user.email")]
+  if(length(config_ok) >= 2) {
+    message("User name and email in Git config: \n  \u2022 ", paste0(config_ok, collapse = "\n  \u2022 "))
+  } else {
+    message("User name and/or email not detected in Git config!")
+    if(.Platform$OS.type == 'windows') {
+      message("For Windows operating system, in R console, try:",
+              " \n  \u2022 system('git config --global user.name \"my_github_username\"')",
+              " \n  \u2022 system('git config --global user.email \"my_email@ucsb.edu\"')")
+    } else {
+      message("For Mac/Linux, in R console, try:",
+              " \n  \u2022 usethis::use_git_config(user.name = \"my_username\", user.email = \"my_email@ucsb.edu\")")
+    }
+    return(invisible(FALSE))
+  }
+
   return(invisible(TRUE))
 
 }
