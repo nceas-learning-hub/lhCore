@@ -63,6 +63,10 @@ init_course <- function(course_proj,
   if(!quiet) message("Metadata file created at ", normalizePath(repo_path), '/metadata_course.csv')
   if(!quiet) print(metadata_df)
 
+
+  ### include git and github initialization here, unless flagged as FALSE
+
+
   setup_course_structure(template = template, package = package,
                          repo_path = repo_path, quiet = quiet)
 
