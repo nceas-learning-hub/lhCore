@@ -4,7 +4,7 @@
 #' expressions are allowed.
 #'
 #' @param query A character string to search across lessons in the given
-#'     package.  Regular expressions are allowed.
+#'     package.  Regular expressions are allowed.  If no query given, returns all available lessons.
 #' @param pkg The package to query for lesson availability (default `lhLessons`)
 #'
 #' @return A data frame containing the file names (.qmd) of lessons
@@ -13,9 +13,12 @@
 #'
 #' @examples \dontrun{search_lessons(query = "github"))}
 
-search_lessons <- function(query, pkg = 'lhLessons') {
-  v <- get_lessons_version(pkg)
-  message('Searching lessons from ', pkg, ' version ', v)
+search_lessons <- function(query = NULL, pkg = 'lhLessons', quiet = TRUE) {
+  v <- utils::packageVersion(pkg) |> paste(collapse = '.')
+  if(!quiet) {
+    if(is.null(query)) message('Gathering all available lessons from ', pkg, ' version ', v)
+    else message('Searching available lessons from ', pkg, ' version ', v, ' that match \"', query, '\"')
+  }
 
   l_vec <- list.files(system.file('lessons', package = pkg),
                       full.names = TRUE)
@@ -30,6 +33,11 @@ search_lessons <- function(query, pkg = 'lhLessons') {
     stringr::str_detect(basename(l_vec), query)
 
   result_df <- l_df[keep_vec, ]
+
+  if(nrow(result_df) == 0) {
+      warning('Note: no lessons are available in ', pkg, ' version ', v, ' that match \"', query, '\"...')
+    }
+
 
   return(result_df)
 }

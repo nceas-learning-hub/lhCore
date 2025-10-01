@@ -1,10 +1,9 @@
 ### get_course_metadata
 ### verify course_repo
-### init_quarto_yml
 ### setup_quarto_yml
 ### check_git_steps
 
-get_course_metadata<- function() {
+get_course_metadata <- function() {
   ### get metadata from metadata_course.csv
   metadata_df <- readr::read_csv(here::here("metadata_course.csv"), show_col_types = FALSE)
   meta <- metadata_df$value
@@ -28,38 +27,6 @@ verify_course_repo <- function(query = 'Is this the correct course location?') {
 
 }
 
-init_quarto_yml <- function(lessons, package, overwrite = FALSE) {
-
-  qmd_yml_f_pkg <- list.files(system.file("course_files", package = package),
-                              pattern = '_quarto_template.yml',
-                              full.names = TRUE)
-  if(length(qmd_yml_f_pkg) == 0) stop("No _quarto_template.yml found in package: ", package)
-  qmd_yml_f_lcl <- here::here("_quarto.yml")
-
-  ### copy package file to local file
-  file.copy(qmd_yml_f_pkg, qmd_yml_f_lcl, overwrite = overwrite)
-
-  ### get metadata for fields
-  meta <- get_course_metadata()
-
-  course_repo <- sprintf('https://github.com/%s/%s', meta["course_org"], meta["course_proj"])
-  course_url  <- sprintf('%s.github.io/%s', meta["course_org"], meta["course_proj"])
-  if(is.na(meta["course_dates"])) {
-    ### empty date field; title is all
-    course_title = meta["course_title"]
-  } else {
-    course_title = sprintf("%s (%s)", meta["course_title"], meta["course_dates"])
-  }
-
-  ### Update the _quarto.yml with all the good info!
-  quarto_yml_txt <- readr::read_file(qmd_yml_f_lcl) |>
-    stringr::str_replace_all("COURSE_REPO", course_repo) |>
-    stringr::str_replace_all("COURSE_URL", course_url) |>
-    stringr::str_replace_all("COURSE_TITLE", course_title)
-
-  ### write out updated yml file
-  readr::write_file(quarto_yml_txt, qmd_yml_f_lcl)
-}
 
 setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
   quarto_yml_file <- here::here("_quarto.yml")

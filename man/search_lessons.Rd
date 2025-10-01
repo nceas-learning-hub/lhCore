@@ -4,11 +4,11 @@
 \alias{search_lessons}
 \title{Search available lessons using partial matching}
 \usage{
-search_lessons(query, pkg = "lhLessons")
+search_lessons(query = NULL, pkg = "lhLessons", quiet = TRUE)
 }
 \arguments{
 \item{query}{A character string to search across lessons in the given
-package.  Regular expressions are allowed.}
+package.  Regular expressions are allowed.  If no query given, returns all available lessons.}
 
 \item{pkg}{The package to query for lesson availability (default \code{lhLessons})}
 }

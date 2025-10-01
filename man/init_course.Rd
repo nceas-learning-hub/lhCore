@@ -10,7 +10,10 @@ init_course(
   course_title = NULL,
   course_desc = NULL,
   course_dates = NULL,
-  loc = "."
+  template = c("lh", "adc", "delta", "corer")[1],
+  package = "lhLessons",
+  loc = ".",
+  quiet = FALSE
 )
 }
 \arguments{
