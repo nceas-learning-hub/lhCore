@@ -3,9 +3,12 @@
 ### setup_quarto_yml
 ### check_git_steps
 
-get_course_metadata <- function() {
+get_course_metadata <- function(repo = NULL) {
   ### get metadata from metadata_course.csv
-  metadata_df <- readr::read_csv(here::here("metadata_course.csv"), show_col_types = FALSE)
+  if(!file.exists('metadata_course.csv')) {
+    stop('No metadata_course.csv detected in the current location: ', getwd())
+  }
+  metadata_df <- readr::read_csv("metadata_course.csv", show_col_types = FALSE)
   meta <- metadata_df$value
   names(meta) <- metadata_df$field
 

@@ -28,7 +28,10 @@
 #'     just the one lessons package; this is a placeholder for potential future
 #'     functionality allowing for customized lessons packages for other users.
 #' @param loc The file location where the course repository will be created.
-#'     Defaults to the current working directory.
+#'     Default (`NULL`) will revert to the current working directory (`'.'`) if
+#'     no `.Rproj` detected, otherwise will aim for the directory above (`'..'`).
+#'     There is a built-in check in `usethis::create_project()` that will protect
+#'     further in case you're in nested project territory though.
 #' @param quiet Provide progress and diagnostic messages during course initialization?
 #'     Default `FALSE`.
 #'
@@ -52,8 +55,8 @@ init_course <- function(course_proj,
                         setup_github = TRUE,
                         template = c('lh', 'adc', 'delta', 'corer')[1],
                         package = 'lhLessons',
-                        loc = ".",
-                        quiet = FALSE) {
+                        loc = NULL,
+                        quiet = TRUE) {
   ### set up a new project using usethis::create_project(path = "MyNewProject", open = TRUE, rstudio = TRUE)
   if(stringr::str_detect(course_proj, "[^A-Za-z0-9-_]")) {
     course_name_old <- course_proj
@@ -62,10 +65,24 @@ init_course <- function(course_proj,
             course_name_old, " changed to new name: ", course_proj)
   }
 
+  if(is.null(loc)) {
+    if(any(stringr::str_detect(list.files('.'), '.Rproj$'))) {
+      loc <- '..'
+    } else {
+      loc <- '.'
+    }
+  }
+
   ### Create the repo
   repo_path <- file.path(loc, course_proj)
   usethis::create_project(path = repo_path, open = FALSE, rstudio = TRUE)
-  if(!quiet) message("R Project created: ", course_proj, " at ", normalizePath(repo_path))
+  if(!quiet) message('R Project created: ', course_proj, ' at ', normalizePath(repo_path))
+
+  protect_current_path <- getwd()
+
+  ### set working directory to be inside the new repo
+  if(!quiet) message('Setting working directory to ', repo_path)
+  setwd(repo_path)
 
   ### Add metadata file - overwrite NULLs for title and description
   if(is.null(course_title)) course_title <- course_proj
@@ -75,26 +92,30 @@ init_course <- function(course_proj,
   metadata_df <- data.frame(
     field = c('course_proj', 'course_org', 'course_title', 'course_desc', 'course_dates'),
     value = c( course_proj,   course_org,   course_title,   course_desc,   course_dates))
-  readr::write_csv(metadata_df, file.path(repo_path, 'metadata_course.csv'))
-  if(!quiet) message("Metadata file created at ", normalizePath(repo_path), '/metadata_course.csv')
+  readr::write_csv(metadata_df, 'metadata_course.csv')
+  if(!quiet) message("Metadata file created at ", getwd(), '/metadata_course.csv')
   if(!quiet) print(metadata_df)
 
+  setup_course_structure(template = template, package = package,
+                         repo = course_proj, quiet = quiet)
 
   ### include git and github initialization here, unless flagged as FALSE
   if(setup_github) {
-    setup_git_github(repo_path = repo_path, org = course_org)
+    setup_git_github(repo = course_proj, org = course_org, quiet = quiet)
   }
+  check_git_steps()
 
-
-  setup_course_structure(template = template, package = package,
-                         repo_path = repo_path, quiet = quiet)
 
   if(!quiet) {
     open_proj <- readline('Do you wish to open the new project in RStudio? (y/n) ')
   } else {
     open_proj = 'y'  ### in quiet mode, just open the damn repo already
   }
-  if(tolower(open_proj) == 'y') usethis::proj_activate(repo_path)
+  if(tolower(open_proj) == 'y') usethis::proj_activate(getwd())
+
+  setwd(protect_current_path)
+  if(!quiet) message('Resetting current working directory to ', protect_current_path, '...')
+  message('The new course has been created as a new project.  Close this project and open or activate the new course project directly.')
 }
 
 
@@ -104,9 +125,9 @@ init_course <- function(course_proj,
 
 setup_course_structure <- function(template,
                                    package,
-                                   repo_path,
+                                   repo,
                                    quiet = FALSE) {
-
+  check_repo_path(repo)
   ### Query lesson version (checks to ensure lessons package is installed!)
   v <- get_lessons_version(pkg = package, quiet = TRUE)
   if(!quiet) message(sprintf("Installing structure template from %s, version %s...", package, v))
@@ -118,7 +139,7 @@ setup_course_structure <- function(template,
   ### no template-specific info on _quarto.yml, so far... copy from lessons and add
   ### course name and dates from metadata
 
-  init_quarto_yml(package = package, repo_path = repo_path, overwrite = FALSE)
+  init_quarto_yml(package = package, repo = repo, overwrite = FALSE)
 
   ################################
   ###  setup for gha publish   ###
@@ -127,12 +148,12 @@ setup_course_structure <- function(template,
   ### copy GHA files and copy gitignore to ignore docs/
 
   gitignore_f <- system.file("course_files/gitignore_template", package = package)
-  file.copy(gitignore_f, file.path(repo_path, ".gitignore"), overwrite = TRUE)
+  file.copy(gitignore_f, ".gitignore", overwrite = TRUE)
 
   gha_fs <- list.files(system.file("course_files/gha_publish", package = package),
                        recursive = TRUE, full.names = TRUE)
-  dir.create(file.path(repo_path, ".github")); dir.create(file.path(repo_path, ".github/workflows"))
-  file.copy(gha_fs, file.path(repo_path, ".github/workflows"))
+  dir.create(".github"); dir.create(".github/workflows")
+  file.copy(gha_fs, ".github/workflows")
 
   ################################
   ###     set up index.qmd     ###
@@ -144,7 +165,7 @@ setup_course_structure <- function(template,
   ### file error checks
   if(!file.exists(index_template)) stop("Template file does not exist: ", index_template)
 
-  index_file <- file.path(repo_path, "index.qmd")
+  index_file <- "index.qmd"
   if(file.exists(index_file)) {
     stop("File exists: ", index_file, " - index.qmd file not updated")
   } else {
@@ -155,7 +176,7 @@ setup_course_structure <- function(template,
   ################################
   ### Install theme and banner ###
   ################################
-  install_theme(org = 'nceas-learning-hub', theme = template, repo_path = repo_path)
+  install_theme(org = 'nceas-learning-hub', theme = template, repo = repo, quiet = quiet)
 
 
   ################################
@@ -166,7 +187,7 @@ setup_course_structure <- function(template,
   misc_fs <- list.files(system.file("course_files", package = package),
                         full.names = TRUE)
   misc_fs <- misc_fs[!dir.exists(misc_fs) & !stringr::str_detect(basename(misc_fs), '_quarto_template.yml|gitignore')]
-  file.copy(misc_fs, repo_path)
+  file.copy(misc_fs, '.')
 
 
   ################################
@@ -177,20 +198,19 @@ setup_course_structure <- function(template,
     message("To render the course book, restart RStudio to activate the Build tab.")
     message("Recommended next steps: ",
             "\n  \u2022 Edit the index.qmd to ensure it accurately describes the course",
-            "\n  \u2022 Use `available_lessons()` to see the lesson catalog from the lesson package",
+            "\n  \u2022 Use `search_lessons()` to see the lesson catalog from the lesson package",
             "\n  \u2022 Use `setup_lessons(<lessons>)` to install the lessons in the course")
-    check_git_steps()
   }
 
 }
 
-init_quarto_yml <- function(package, repo_path, overwrite) {
+init_quarto_yml <- function(package, repo, overwrite) {
 
   qmd_yml_f_pkg <- list.files(system.file("course_files", package = package),
                               pattern = '_quarto_template.yml',
                               full.names = TRUE)
   if(length(qmd_yml_f_pkg) == 0) stop("No _quarto_template.yml found in package: ", package)
-  qmd_yml_f_lcl <- file.path(repo_path, "_quarto.yml")
+  qmd_yml_f_lcl <- "_quarto.yml"
 
   ### copy package file to local file
   if(file.exists(qmd_yml_f_lcl) & !overwrite) {
@@ -223,44 +243,42 @@ init_quarto_yml <- function(package, repo_path, overwrite) {
 
 install_theme <- function(org = 'nceas-learning-hub',
                           theme,
-                          repo_path) {
+                          repo,
+                          quiet = FALSE) {
+  check_repo_path(repo)
 
   ### where is the extension coming from? organisation and repo
   extension_dir <- sprintf('%s/theme_%s', org, theme)
 
   quarto_add <- sprintf('quarto add %s --no-prompt', extension_dir)
 
-  ### change working dir temporarily to repo path to run the quarto add
-  cwd <- getwd()
-  system(paste('cd', repo_path))
-  system(quarto_add)
-  ### reset directory before exiting
-  system(paste('cd', cwd))
+  quarto_msg <- utils::capture.output({
+    system(quarto_add)
+  }, type = 'message')
+  if(!quiet) print(quarto_msg)
 
   return(extension_dir)
 }
 
-setup_git_github <- function(repo_path, org) {
-  ### temp set wd to repo path
-  cwd <- getwd()
-  system(paste('cd', repo_path))
+setup_git_github <- function(repo, org, quiet) {
 
-  ### git init/add/commit
-  system('git init')
-  git_add <- system('git add --all', intern = TRUE)
-  message(git_add)
-  git_commit <- system('git commit -m "Initial commit"', intern = TRUE)
-  message(git_commit)
+  check_repo_path(repo)
 
-  repo_origin <- sprintf('%s/%s.git', org, basename(repo_path))
-  system(paste0('git remote add origin git@github.com:', repo_origin))
+  ### git init/add/commit manually to avoid the annoying usethis::use_git() prompt
+  x <- gert::git_init()
+  x <- gert::git_add(files = '.')
+  if(!quiet) print(x)
+  x <- gert::git_commit_all(message = 'Initial commit')
+  if(!quiet) print(x)
 
-  verified <- system('git remote -v', intern = TRUE)
-  message(verified)
+  usethis::use_github(organisation = org)
 
-  git_push <- system('git push -u -f origin main')
-  message(git_push)
+}
 
-  ### reset directory before exiting
-  system(paste('cd', cwd))
+check_repo_path <- function(repo) {
+  x <- getwd()
+  if(basename(x) != repo) stop('Mismatch between current working directory and repo name!')
+  fs <- list.files(x)
+  if(!any(stringr::str_detect(fs, '.Rproj$'))) stop('Current working directory does not contain .Rproj!')
+  return('all good')
 }

@@ -19,6 +19,7 @@ BugReports: https://github.com/nceas-learning-hub/lhCore/issues
 Imports:
     dplyr,
     here,
+    gert,
     purrr,
     readr,
     remotes,

@@ -13,8 +13,8 @@ init_course(
   setup_github = TRUE,
   template = c("lh", "adc", "delta", "corer")[1],
   package = "lhLessons",
-  loc = ".",
-  quiet = FALSE
+  loc = NULL,
+  quiet = TRUE
 )
 }
 \arguments{
@@ -50,7 +50,10 @@ just the one lessons package; this is a placeholder for potential future
 functionality allowing for customized lessons packages for other users.}
 
 \item{loc}{The file location where the course repository will be created.
-Defaults to the current working directory.}
+Default (\code{NULL}) will revert to the current working directory (\code{'.'}) if
+no \code{.Rproj} detected, otherwise will aim for the directory above (\code{'..'}).
+There is a built-in check in \code{usethis::create_project()} that will protect
+further in case you're in nested project territory though.}
 
 \item{quiet}{Provide progress and diagnostic messages during course initialization?
 Default \code{FALSE}.}
