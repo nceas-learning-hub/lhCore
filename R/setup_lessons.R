@@ -31,11 +31,11 @@
 #'                           "github_collaboration",
 #'                           "r_functions.qmd"))
 #' ### modules as named vector
-#' lesson_mods <- available_lessons()$lesson[1:6] |> setNames(c(1, 1, 2, 2, 3, 3))
+#' lesson_mods <- search_lessons()$lesson[1:6] |> setNames(c(1, 1, 2, 2, 3, 3))
 #' setup_lessons(lessons = lesson_mods)
 #'
 #' ### modules as argument
-#' setup_lessons(lessons = available_lessons()$lesson[1:6],
+#' setup_lessons(lessons = search_lessons()$lesson[1:6],
 #'               modules = rep(c("day 1", "day 2"), each = 3))
 #'
 #' ### modules and course as dataframe
@@ -76,7 +76,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 
 
   ### check that all lessons are in lhLessons
-  lessons_available <- available_lessons(pkg = package)$lesson
+  lessons_available <- search_lessons(pkg = package)$lesson
   lessons_missing <- lessons[!lessons %in% lessons_available]
   if(length(lessons_missing) > 0) stop("Some lessons are not found in the ', package, ' package:",
                                        paste0("\n\u25CF ", lessons_missing))
@@ -125,7 +125,7 @@ copy_lessons <- function(lessons, from, to = ".", pkg) {
   if(!dir.exists(subfolder)) dir.create(subfolder)
 
   ### copy over files from lessons package to current project
-  fs_avail <- available_lessons(lessons) ### built in error check for missing lessons
+  fs_avail <- search_lessons(lessons) ### built in error check for missing lessons
 
   fs_to_copy <- fs_avail$lesson_file[order(match(fs_avail$lesson, lessons))]
 

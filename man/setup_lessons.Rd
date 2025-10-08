@@ -45,11 +45,11 @@ setup_lessons(lessons = c("activity_reproducibility_lego",
                           "github_collaboration",
                           "r_functions.qmd"))
 ### modules as named vector
-lesson_mods <- available_lessons()$lesson[1:6] |> setNames(c(1, 1, 2, 2, 3, 3))
+lesson_mods <- search_lessons()$lesson[1:6] |> setNames(c(1, 1, 2, 2, 3, 3))
 setup_lessons(lessons = lesson_mods)
 
 ### modules as argument
-setup_lessons(lessons = available_lessons()$lesson[1:6],
+setup_lessons(lessons = search_lessons()$lesson[1:6],
               modules = rep(c("day 1", "day 2"), each = 3))
 
 ### modules and course as dataframe

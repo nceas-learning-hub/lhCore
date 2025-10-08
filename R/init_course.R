@@ -14,8 +14,23 @@
 #'     (default), will be left empty.
 #' @param course_dates The dates of the course (as character, so any preferred format).
 #'     If NULL, will be left empty.
+#' @param setup_github Set up the new course for Git/GitHub?  Default `TRUE` will
+#'     initialize the course repository as a Git-tracked project, and then will
+#'     connect it to a GitHub repository named `course_proj` in the organization
+#'     defined by `course_org`.
+#' @param template The stylistic template to use when creating the course.  Template
+#'     defines the default landing/index page, banner colors, hex logo, etc.  Current
+#'     options are: `'lh'` (default) for Learning Hub style and landing page; `'adc'`
+#'     for Arctic Data Center; `'delta'` for Delta Stewardship Council; and `'corer'`
+#'     for coreR style and landing page.
+#' @param package The lessons package to be associated with the course.  The lessons
+#'     package is the source of the Quarto structure and index page files.  Currently
+#'     just the one lessons package; this is a placeholder for potential future
+#'     functionality allowing for customized lessons packages for other users.
 #' @param loc The file location where the course repository will be created.
 #'     Defaults to the current working directory.
+#' @param quiet Provide progress and diagnostic messages during course initialization?
+#'     Default `FALSE`.
 #'
 #' @return stuff
 #' @export
@@ -34,6 +49,7 @@ init_course <- function(course_proj,
                         course_title = NULL,
                         course_desc  = NULL,
                         course_dates = NULL,
+                        setup_github = TRUE,
                         template = c('lh', 'adc', 'delta', 'corer')[1],
                         package = 'lhLessons',
                         loc = ".",
@@ -65,6 +81,9 @@ init_course <- function(course_proj,
 
 
   ### include git and github initialization here, unless flagged as FALSE
+  if(setup_github) {
+    setup_git_github(repo_path = repo_path, org = course_org)
+  }
 
 
   setup_course_structure(template = template, package = package,
@@ -99,7 +118,7 @@ setup_course_structure <- function(template,
   ### no template-specific info on _quarto.yml, so far... copy from lessons and add
   ### course name and dates from metadata
 
-  init_quarto_yml(package = package, repo_path = repo_path)
+  init_quarto_yml(package = package, repo_path = repo_path, overwrite = FALSE)
 
   ################################
   ###  setup for gha publish   ###
@@ -126,10 +145,12 @@ setup_course_structure <- function(template,
   if(!file.exists(index_template)) stop("Template file does not exist: ", index_template)
 
   index_file <- file.path(repo_path, "index.qmd")
-  if(!overwrite & file.exists(index_file)) stop("File exists: ", index_file, " but overwrite is FALSE - index.qmd file not updated")
-
-  ### copy a clean version of the template
-  file.copy(index_template, index_file, overwrite = overwrite)
+  if(file.exists(index_file)) {
+    stop("File exists: ", index_file, " - index.qmd file not updated")
+  } else {
+    ### copy a clean version of the template
+    file.copy(index_template, index_file)
+  }
 
   ################################
   ### Install theme and banner ###
@@ -163,7 +184,7 @@ setup_course_structure <- function(template,
 
 }
 
-init_quarto_yml <- function(package, repo_path) {
+init_quarto_yml <- function(package, repo_path, overwrite) {
 
   qmd_yml_f_pkg <- list.files(system.file("course_files", package = package),
                               pattern = '_quarto_template.yml',
@@ -172,7 +193,11 @@ init_quarto_yml <- function(package, repo_path) {
   qmd_yml_f_lcl <- file.path(repo_path, "_quarto.yml")
 
   ### copy package file to local file
-  file.copy(qmd_yml_f_pkg, qmd_yml_f_lcl, overwrite = overwrite)
+  if(file.exists(qmd_yml_f_lcl) & !overwrite) {
+    stop ('_quarto.yml file already exists!  Delete and run again')
+  } else {
+    file.copy(qmd_yml_f_pkg, qmd_yml_f_lcl, overwrite = overwrite)
+  }
 
   ### get metadata for fields
   meta <- get_course_metadata()
@@ -209,7 +234,33 @@ install_theme <- function(org = 'nceas-learning-hub',
   cwd <- getwd()
   system(paste('cd', repo_path))
   system(quarto_add)
+  ### reset directory before exiting
   system(paste('cd', cwd))
 
   return(extension_dir)
+}
+
+setup_git_github <- function(repo_path, org) {
+  ### temp set wd to repo path
+  cwd <- getwd()
+  system(paste('cd', repo_path))
+
+  ### git init/add/commit
+  system('git init')
+  git_add <- system('git add --all', intern = TRUE)
+  message(git_add)
+  git_commit <- system('git commit -m "Initial commit"', intern = TRUE)
+  message(git_commit)
+
+  repo_origin <- sprintf('%s/%s.git', org, basename(repo_path))
+  system(paste0('git remote add origin git@github.com:', repo_origin))
+
+  verified <- system('git remote -v', intern = TRUE)
+  message(verified)
+
+  git_push <- system('git push -u -f origin main')
+  message(git_push)
+
+  ### reset directory before exiting
+  system(paste('cd', cwd))
 }

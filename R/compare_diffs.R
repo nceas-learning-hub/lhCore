@@ -73,7 +73,7 @@ compare_diffs <- function(lessons = NULL,
   }
 
   ### Lessons to compare differences:
-  lessons_avail <- available_lessons(pkg = pkg)
+  lessons_avail <- search_lessons(pkg = pkg)
   lessons_compare <- lessons_avail |>
     dplyr::inner_join(lessons_df, by = c('lesson' = 'bare'))
 

@@ -10,6 +10,7 @@ init_course(
   course_title = NULL,
   course_desc = NULL,
   course_dates = NULL,
+  setup_github = TRUE,
   template = c("lh", "adc", "delta", "corer")[1],
   package = "lhLessons",
   loc = ".",
@@ -32,8 +33,27 @@ will belong.}
 \item{course_dates}{The dates of the course (as character, so any preferred format).
 If NULL, will be left empty.}
 
+\item{setup_github}{Set up the new course for Git/GitHub?  Default \code{TRUE} will
+initialize the course repository as a Git-tracked project, and then will
+connect it to a GitHub repository named \code{course_proj} in the organization
+defined by \code{course_org}.}
+
+\item{template}{The stylistic template to use when creating the course.  Template
+defines the default landing/index page, banner colors, hex logo, etc.  Current
+options are: \code{'lh'} (default) for Learning Hub style and landing page; \code{'adc'}
+for Arctic Data Center; \code{'delta'} for Delta Stewardship Council; and \code{'corer'}
+for coreR style and landing page.}
+
+\item{package}{The lessons package to be associated with the course.  The lessons
+package is the source of the Quarto structure and index page files.  Currently
+just the one lessons package; this is a placeholder for potential future
+functionality allowing for customized lessons packages for other users.}
+
 \item{loc}{The file location where the course repository will be created.
 Defaults to the current working directory.}
+
+\item{quiet}{Provide progress and diagnostic messages during course initialization?
+Default \code{FALSE}.}
 }
 \value{
 stuff

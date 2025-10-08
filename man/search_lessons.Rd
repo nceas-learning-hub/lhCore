@@ -11,6 +11,9 @@ search_lessons(query = NULL, pkg = "lhLessons", quiet = TRUE)
 package.  Regular expressions are allowed.  If no query given, returns all available lessons.}
 
 \item{pkg}{The package to query for lesson availability (default \code{lhLessons})}
+
+\item{quiet}{Provide progress and diagnostic messages during search?
+Default \code{TRUE}.}
 }
 \value{
 A data frame containing the file names (.qmd) of lessons

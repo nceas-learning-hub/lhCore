@@ -6,6 +6,8 @@
 #' @param query A character string to search across lessons in the given
 #'     package.  Regular expressions are allowed.  If no query given, returns all available lessons.
 #' @param pkg The package to query for lesson availability (default `lhLessons`)
+#' @param quiet Provide progress and diagnostic messages during search?
+#'     Default `TRUE`.
 #'
 #' @return A data frame containing the file names (.qmd) of lessons
 #'     from the given package that match the search query.
