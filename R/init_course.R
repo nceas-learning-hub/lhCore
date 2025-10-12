@@ -102,6 +102,7 @@ init_course <- function(course_proj,
   ### include git and github initialization here, unless flagged as FALSE
   if(setup_github) {
     setup_git_github(repo = course_proj, org = course_org, quiet = quiet)
+    publish_quarto(repo = course_proj)
   }
   check_git_steps()
 
@@ -273,6 +274,19 @@ setup_git_github <- function(repo, org, quiet) {
 
   usethis::use_github(organisation = org)
 
+}
+
+publish_quarto <- function(repo) {
+  ### instructions here https://quarto.org/docs/publishing/github-pages.html#source-branch
+  ### set up gh-pages at origin so the quarto publish command will work without the prompt
+  check_repo_path(repo)
+  system('git checkout --orphan gh-pages')
+  system('git reset --hard')
+  system('git commit --allow-empty -m "initializing gh-pages branch"')
+  system('git push origin gh-pages')
+  system('git checkout main')
+  system('quarto publish gh-pages --no-prompt')
+  return('done!')
 }
 
 check_repo_path <- function(repo) {
