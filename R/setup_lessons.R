@@ -76,7 +76,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 
 
   ### check that all lessons are in lhLessons
-  lessons_available <- search_lessons(pkg = package)$lesson
+  lessons_available <- search_lessons(query = lessons, pkg = package)$lesson
   lessons_missing <- lessons[!lessons %in% lessons_available]
   if(length(lessons_missing) > 0) stop("Some lessons are not found in the ', package, ' package:",
                                        paste0("\n\u25CF ", lessons_missing))

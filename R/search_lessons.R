@@ -22,6 +22,8 @@ search_lessons <- function(query = NULL, pkg = 'lhLessons', quiet = TRUE) {
     else message('Searching available lessons from ', pkg, ' version ', v, ' that match \"', query, '\"')
   }
 
+  if(is.null(query)) query <- '.'
+
   l_vec <- list.files(system.file('lessons', package = pkg),
                       full.names = TRUE)
   l_df <- data.frame(lesson_file = l_vec,
