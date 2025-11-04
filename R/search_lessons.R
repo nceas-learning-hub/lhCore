@@ -32,16 +32,16 @@ search_lessons <- function(query = NULL, pkg = 'lhLessons', quiet = TRUE) {
   ### change lesson to a sentence format just in case
   lesson_txt <- stringr::str_replace_all(tolower(l_df$lesson), "[^a-z0-9]", " ")
 
-  query <- tolower(query)
-  keep_vec <- stringr::str_detect(lesson_txt, query) |
-    stringr::str_detect(basename(l_vec), query)
+  ### create query string as collapsed vector of OR clauses
+  query_str <- tolower(query) |> paste(collapse = '|')
+  keep_vec <- stringr::str_detect(lesson_txt, query_str) |
+    stringr::str_detect(basename(l_vec), query_str)
 
   result_df <- l_df[keep_vec, ]
 
   if(nrow(result_df) == 0) {
-      warning('Note: no lessons are available in ', pkg, ' version ', v, ' that match \"', query, '\"...')
-    }
-
+    warning('Note: no lessons are available in ', pkg, ' version ', v, ' that match \"', query_str, '\"...')
+  }
 
   return(result_df)
 }

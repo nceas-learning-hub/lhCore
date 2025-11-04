@@ -102,7 +102,7 @@ init_course <- function(course_proj,
   ### include git and github initialization here, unless flagged as FALSE
   if(setup_github) {
     setup_git_github(repo = course_proj, org = course_org, quiet = quiet)
-    publish_quarto(repo = course_proj)
+    publish_gha(repo = course_proj, pkg = package)
   }
   check_git_steps()
 
@@ -141,20 +141,6 @@ setup_course_structure <- function(template,
   ### course name and dates from metadata
 
   init_quarto_yml(package = package, repo = repo, overwrite = FALSE)
-
-  ################################
-  ###  setup for gha publish   ###
-  ################################
-
-  ### copy GHA files and copy gitignore to ignore docs/
-
-  gitignore_f <- system.file("course_files/gitignore_template", package = package)
-  file.copy(gitignore_f, ".gitignore", overwrite = TRUE)
-
-  gha_fs <- list.files(system.file("course_files/gha_publish", package = package),
-                       recursive = TRUE, full.names = TRUE)
-  dir.create(".github"); dir.create(".github/workflows")
-  file.copy(gha_fs, ".github/workflows")
 
   ################################
   ###     set up index.qmd     ###
@@ -276,7 +262,18 @@ setup_git_github <- function(repo, org, quiet) {
 
 }
 
-publish_quarto <- function(repo) {
+publish_gha <- function(repo, pkg) {
+  ### copy GHA files and copy gitignore to ignore docs/
+
+  gitignore_f <- system.file("course_files/gitignore_template", package = pkg)
+  file.copy(gitignore_f, ".gitignore", overwrite = TRUE)
+
+  gha_fs <- list.files(system.file("course_files/gha_publish", package = pkg),
+                       recursive = TRUE, full.names = TRUE)
+  dir.create(".github"); dir.create(".github/workflows")
+  file.copy(gha_fs, ".github/workflows")
+
+
   ### instructions here https://quarto.org/docs/publishing/github-pages.html#source-branch
   ### set up gh-pages at origin so the quarto publish command will work without the prompt
   check_repo_path(repo)
