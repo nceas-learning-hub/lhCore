@@ -237,12 +237,18 @@ install_theme <- function(org = 'nceas-learning-hub',
   ### where is the extension coming from? organisation and repo
   extension_dir <- sprintf('%s/theme_%s', org, theme)
 
-  quarto_add <- sprintf('quarto add %s --no-prompt', extension_dir)
+  quarto_add_theme <- sprintf('quarto add %s --no-prompt', extension_dir)
 
-  quarto_msg <- utils::capture.output({
-    system(quarto_add)
+  quarto_msg_theme <- utils::capture.output({
+    system(quarto_add_theme)
   }, type = 'message')
-  if(!quiet) print(quarto_msg)
+  if(!quiet) print(quarto_msg_theme)
+
+  ### also install fontawesome
+  quarto_msg_fontawesome <- utils::capture.output({
+    system('quarto add quarto-ext/fontawesome --no-prompt')
+  }, type = 'message')
+  if(!quiet) print(quarto_msg_fontawesome)
 
   return(extension_dir)
 }
