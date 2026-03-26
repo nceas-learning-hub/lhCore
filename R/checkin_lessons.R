@@ -53,9 +53,10 @@ checkin_lessons <- function(lessons = NULL,
 
   ### copy relevant files over; overwrite existing versions incl entire folders
   copy_lessons_to_checkin(lessons_df, repo_tmp_dir)
-  copy_files_to_checkin(lessons_df, 'slides', repo_tmp_dir)
-  copy_files_to_checkin(lessons_df, 'data',   repo_tmp_dir)
-  copy_files_to_checkin(lessons_df, 'images', repo_tmp_dir)
+  copy_files_to_checkin(lessons_df, 'slides',    repo_tmp_dir)
+  copy_files_to_checkin(lessons_df, 'data',      repo_tmp_dir)
+  copy_files_to_checkin(lessons_df, 'images',    repo_tmp_dir)
+  copy_files_to_checkin(lessons_df, 'resources', repo_tmp_dir)
 
   ### check with user after git add --all
   course_repo <- here::here()

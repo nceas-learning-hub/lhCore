@@ -93,9 +93,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".")
 
   ### copy over lesson-associated folders from lessons package to current project: lessons, images, data
-  copy_folders(lessons, from = "lesson_images", to = "images", pkg = package)
-  copy_folders(lessons, from = "lesson_data",   to = "data",   pkg = package)
-  copy_folders(lessons, from = "lesson_slides", to = "slides", pkg = package)
+  copy_folders(lessons, from = "lesson_images",    to = "images",    pkg = package)
+  copy_folders(lessons, from = "lesson_data",      to = "data",      pkg = package)
+  copy_folders(lessons, from = "lesson_slides",    to = "slides",    pkg = package)
+  copy_folders(lessons, from = "lesson_resources", to = "resources", pkg = package)
 
   ### Set up and write out lessons metadata: module, lesson, lesson files, lesson repo, and repo version
   meta <- data.frame(module = ifelse(exists('modules'), modules, NA),
