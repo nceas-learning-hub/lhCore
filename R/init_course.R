@@ -256,8 +256,15 @@ setup_git_github <- function(repo, org, quiet) {
   x <- gert::git_add(files = '.')
   if(!quiet) print(x)
   x <- gert::git_commit_all(message = 'Initial commit')
-  if(!quiet) print(x)
 
+  b <- gert::git_branch_list()
+  if(!'main' %in% b$name & 'master' %in% b$name) {
+    ### NOTE: this will only work if the default branch is currently 'master';
+    ### if the default branch is anything else, it won't change and there will
+    ### be problems later
+    message('Renaming default branch for course from master to main...')
+    gert::git_branch_move(branch = 'master', new_branch = 'main')
+  }
   usethis::use_github(organisation = org)
 
 }
@@ -281,6 +288,9 @@ publish_gha <- function(repo, pkg) {
   system('git reset --hard')
   system('git commit --allow-empty -m "initializing gh-pages branch"')
   system('git push origin gh-pages')
+
+  ### NOTE: this line requires default to be main; if default is something
+  ### else, this will fail - see check in setup_git_github() about renaming master branch to main
   system('git checkout main')
   system('quarto publish gh-pages --no-prompt')
   return('done!')
