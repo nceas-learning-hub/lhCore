@@ -29,7 +29,7 @@ will find all local files with \code{sXX_} prefix and check them.}
 
 \item{prefix}{A character indicator of the expected prefix letter for lesson files.}
 
-\item{file_out}{The location in the current repository where the results will
+\item{file_out}{The location in the current repository where the diff results will
 be saved as a text file.}
 }
 \value{
@@ -45,7 +45,7 @@ counterpart within a given lessons package (default \code{lhLessons}).  Some not
 \itemize{
 \item This compares using the (bare) lesson name (e.g., \code{s02_git_setup.qmd} is compared
 to the package lesson named \code{git_setup.qmd}), so if the course designer has changed
-a lesson filename manually, that file will NOT be compared, and assumed to be
+a lesson filename manually (beyond the prefix), that file will NOT be compared, and assumed to be
 a new lesson entirely.
 \item Changes in auxiliary files, e.g., images, slides, or data, will NOT be compared.
 However, if the path to these files change (e.g., new or renamed image), those

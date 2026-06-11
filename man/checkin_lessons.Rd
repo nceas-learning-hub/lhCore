@@ -20,7 +20,7 @@ repository name for the package.  Default "lhLessons"}
 \item{org}{The GitHub organization where the lessons package repo lives.  Default "nceas-learning-hub"}
 
 \item{branch}{Optional, a branch name to push lesson changes to.  Default \code{NULL}
-will result in the course project name (contained in the \code{metadata_course.csv} file) being
+will result in the course project name (project root dir name) being
 used as the branch name}
 }
 \description{
