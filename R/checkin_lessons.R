@@ -16,7 +16,7 @@
 #'     repository name for the package.  Default "lhLessons"
 #' @param org The GitHub organization where the lessons package repo lives.  Default "nceas-learning-hub"
 #' @param branch Optional, a branch name to push lesson changes to.  Default `NULL`
-#'     will result in the course project name (contained in the `metadata_course.csv` file) being
+#'     will result in the course project name (project root dir name) being
 #'     used as the branch name
 #'
 #' @export
@@ -32,9 +32,9 @@ checkin_lessons <- function(lessons = NULL,
   }
 
   ### Set branch to be the name of the course, unless otherwise specified
-  ### should this come from course metadata, project directory name, elsewhere?
-  meta <- get_course_metadata()
-  if(is.null(branch)) branch <- meta['course_proj']
+  ### should this come from course root dir name?
+  course_name <- basename(here::here())
+  if(is.null(branch)) branch <- course_name
 
   ### Resolve the lessons argument (depending on type) into list of local lesson files
   lessons_df <- resolve_lessons(lessons)
@@ -83,7 +83,7 @@ checkin_lessons <- function(lessons = NULL,
 
   ### commit changes
   msg <- paste0('lhCore::checkin_lessons(): Checking in lessons from course ',
-                meta['course_proj'], ' to branch ', branch)
+                course_name, ' to branch ', branch)
   x <- system(sprintf('git commit -m "%s"', msg))
   x <- system('git pull')
   if(x != 0) {
@@ -195,6 +195,7 @@ copy_files_to_checkin <- function(lessons_df, folder, tmp_dir) {
 
   ### delete existing files; set up new dir if necessary
   x <- lapply(to_dir, function(f) {
+    ### f <- to_dir[1]
     if(file.exists(f)) {
       old_fs <- list.files(f, full.names = TRUE, recursive = TRUE)
       unlink(old_fs, recursive = TRUE)
@@ -205,8 +206,18 @@ copy_files_to_checkin <- function(lessons_df, folder, tmp_dir) {
 
   ### get indiv files from local and copy to temp dir
   from_fs <- list.files(from_dir, recursive = TRUE, full.names = TRUE)
-  x <- file.copy(from = from_fs, to = to_dir, overwrite = TRUE, recursive = TRUE, copy.date = TRUE)
+  to_fs <- from_fs |> stringr::str_replace(from_dir, to_dir)
+
+  ### build "to" directory structure
+  to_dir_structure <- to_fs |> dirname() |> unique() |> sort()
+  if(any(!dir.exists(to_dir_structure))) {
+    x <- lapply(to_dir_structure[!dir.exists(to_dir_structure)], dir.create, recursive = TRUE)
+  }
+  ### copy relevant files to new structure
+  y <- file.copy(from = from_fs, to = to_fs, overwrite = TRUE, copy.date = TRUE)
 
   ### one last check!
-  if(any(!x)) stop('Uh oh, something failed to copy:', paste0('\n\u2022  ', basename(from_fs[!x])))
+  if(any(!y)) stop('Uh oh, something failed to copy:', paste0('\n\u2022  ', basename(from_fs[!y])))
+
+  return(to_fs)
 }

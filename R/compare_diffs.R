@@ -5,7 +5,7 @@
 #'
 #' * This compares using the (bare) lesson name (e.g., `s02_git_setup.qmd` is compared
 #'   to the package lesson named `git_setup.qmd`), so if the course designer has changed
-#'   a lesson filename manually, that file will NOT be compared, and assumed to be
+#'   a lesson filename manually (beyond the prefix), that file will NOT be compared, and assumed to be
 #'   a new lesson entirely.
 #' * Changes in auxiliary files, e.g., images, slides, or data, will NOT be compared.
 #'   However, if the path to these files change (e.g., new or renamed image), those
@@ -19,7 +19,7 @@
 #' @param pkg_version Character Version tag for package, default NULL indicates latest.
 #' @param branch A character name of the branch to be checked.  Currently only checks against `main`.
 #' @param prefix A character indicator of the expected prefix letter for lesson files.
-#' @param file_out The location in the current repository where the results will
+#' @param file_out The location in the current repository where the diff results will
 #'     be saved as a text file.
 #'
 #' @returns (invisibly) a data frame containing `file_remote`, `file_local`,
@@ -37,10 +37,19 @@ compare_diffs <- function(pkg = 'lhLessons',
                           branch = 'main',
                           prefix = 's', file_out = 'git_diff.txt') {
 
-  lessons_local <- list.files(here::here(), pattern = paste0(prefix, '[0-9]{2}_'), full.names = TRUE)
+  installed_version <- get_lessons_version(pkg, quiet = TRUE)
+  repo_version <- query_lessons_tags(pkg, org = org, latest = TRUE, quiet = TRUE)
+  if(repo_version > installed_version) {
+    warning('Your installed version of ', pkg, ' (', installed_version, ') is older than the latest version in the repository (', repo_version, ').  Consider updating to ensure you are comparing against the most up-to-date lessons!')
+    user_input <- readline('Compare diffs against current version? (y/n) ')
+    if(tolower(user_input) != 'y') message('aborting!'); return(NULL)
+  }
 
-  ### Drop lessons with s00_ prefix
-  lessons_local <- lessons_local[!grepl('^s00_', basename(lessons_local), ignore.case = TRUE)]
+  if(is.null(lessons)) {
+    ### if NULL, check *all* local lessons - identified by appropriate prefix
+    lessons_local <- list.files(here::here(), pattern = paste0(prefix, '[0-9]{2}_'), full.names = TRUE)
+    lessons_local <- lessons_local[!grepl('^s00_', basename(lessons_local))]
+  }
 
   ### Clean lesson filenames to bare lesson names
   make_bare <- function(x) {
@@ -48,6 +57,27 @@ compare_diffs <- function(pkg = 'lhLessons',
   }
   lessons_df <- data.frame(file_local = lessons_local,
                            bare = make_bare(lessons_local))
+
+  ### Check local lessons against those in package via search_lessons(),
+  ### so any local lessons not in package might indicate new lessons.
+  lessons_check <- search_lessons(pkg = pkg)
+
+  lesson_new <- lessons_df[!lessons_df$bare %in% lessons_check$lesson, ]
+  if(nrow(lesson_new) > 0) {
+    warning('Lesson(s) detected in course but not listed in package: potentially new?',
+            paste('\n  \u2022 ', lesson_new$bare, collapse = '\n  \u2022'))
+    new_lesson_df <- data.frame(file_remote = NA,
+                                file_local = lesson_new$lesson,
+                                result = 'New file detected',
+                                status = 2)
+  }
+
+  ### Check that lessons all come from the desired package!
+  # pkg_check <- lessons_meta[lessons_meta$package != pkg, ]
+  # if(nrow(pkg_check) > 0) {
+  #   print(pkg_check)
+  #   stop('One or more lessons come from a different package than ', pkg, '!!!')
+  # }
 
   ### Lessons to compare differences:
   lessons_avail <- search_lessons(pkg = pkg)
@@ -61,10 +91,11 @@ compare_diffs <- function(pkg = 'lhLessons',
 
   ### process git diffs, write to .txt, and report changed lessons to user
   diffs_df <- purrr::map2_df(.x = lessons_compare$lesson_file,
-                             .y = lessons_compare$file_local,
+                             .y = lessons_compare$lesson_local,
                              .f = git_diff)
-  diffs_df <- diffs_df |>
-    dplyr::bind_rows(lessons_new)
+
+  ### append new lessons, if they have been detected
+  if(exists('new_lesson_df')) diffs_df <- rbind(diffs_df, new_lesson_df)
 
   diffs_txt <- paste(basename(diffs_df$file_local), '\n\n', diffs_df$result,
                      collapse = '\n\n\n====================\n\n\n')
