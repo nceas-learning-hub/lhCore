@@ -19,15 +19,12 @@ get_course_metadata <- function(repo = NULL) {
 verify_course_repo <- function(query = 'Is this the correct course location?') {
   here_dir <- here::here()
 
-  query_string <- paste0('Current project = ', here_dir, '... ', query, ' (y/n) ')
+  query_string <- paste0('Current project = ', here_dir, '... ', stringr::str_trim(query), ' (y/n) ')
   continue <- readline(query_string)
 
-  if(tolower(continue) != 'y') {
-    stop('Please set the working directory to the course repo and try again.')
-  }
+  if(tolower(continue) != 'y') return(FALSE)
 
-  return(NULL)
-
+  return(TRUE)
 }
 
 

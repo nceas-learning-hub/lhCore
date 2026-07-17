@@ -51,7 +51,7 @@
 
 setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwrite = FALSE) {
 
-  verify_course_repo(query = 'Set up course lessons here?')
+  if(!verify_course_repo(query = 'Set up course lessons here? ')) return(FALSE)
 
   ### Query lesson version (checks to ensure lessons package is installed!)
   v <- get_lessons_version(pkg = package, quiet = TRUE)
@@ -59,7 +59,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 
   ### If lessons provided as data.frame, break into separate lesson and module vectors
   if(any(class(lessons) == "data.frame")) {
-    modules <- lessons$module
+    if(is.null(modules) & 'modules' %in% names(lessons)) modules <- lessons$module
     lessons <- lessons$lesson
   }
   ### If lessons provided as a named vector, break into separate lesson and module vectors
