@@ -1,47 +1,88 @@
-#' Search available lessons using partial matching
+#' Search available lessons using partial matching and/or tags
 #'
-#' Identify lessons whose file name matches a given search string.  Regular
-#' expressions are allowed.
+#' Identify lessons whose file name matches a given search string and/or
+#' whose YAML `categories` field matches one or more tags. Regular
+#' expressions are allowed in `query`.
 #'
-#' @param query A character string to search across lessons in the given
-#'     package.  Regular expressions are allowed.  If no query given, returns all available lessons.
+#' @param query A character string to search across lesson file names in
+#'     the given package. Regular expressions are allowed. If NULL, all
+#'     lessons pass this filter.
+#' @param tags A character vector of tags to match against each lesson's
+#'     YAML `categories:` field. If NULL, all lessons pass this filter.
+#' @param match When `tags` is provided, whether a lesson must match "any"
+#'     (default) of the given tags, or "all" of them.
 #' @param pkg The package to query for lesson availability (default `lhLessons`)
 #' @param quiet Provide progress and diagnostic messages during search?
 #'     Default `TRUE`.
 #'
-#' @return A data frame containing the file names (.qmd) of lessons
-#'     from the given package that match the search query.
+#' @return A data frame containing the file names (.qmd) of lessons from
+#'     the given package that match the query and/or tags, including a
+#'     `categories` column listing each lesson's tags (empty if untagged).
 #' @export
 #'
-#' @examples \dontrun{search_lessons(query = "github"))}
-
-search_lessons <- function(query = NULL, pkg = 'lhLessons', quiet = TRUE) {
+#' @examples \dontrun{
+#' search_lessons(query = "github")
+#' search_lessons(tags = c("beginner", "r"))                # matches either tag
+#' search_lessons(tags = c("beginner", "r"), match = "all") # must have both
+#' }
+search_lessons <- function(query = NULL, tags = NULL, pkg = 'lhLessons',
+                           match = c('any', 'all'), quiet = TRUE) {
+  match <- match.arg(match)
   v <- utils::packageVersion(pkg) |> paste(collapse = '.')
+
   if(!quiet) {
-    if(is.null(query)) message('Gathering all available lessons from ', pkg, ' version ', v)
-    else message('Searching available lessons from ', pkg, ' version ', v, ' that match \"', query, '\"')
+    msg_bits <- c(
+      if(!is.null(query)) sprintf('name matching \"%s\"', query),
+      if(!is.null(tags))  sprintf('tags (%s): %s', match, paste(tags, collapse = ', '))
+    )
+    if(length(msg_bits) == 0) {
+      message('Gathering all available lessons from ', pkg, ' version ', v)
+    } else {
+      message('Searching lessons from ', pkg, ' version ', v,
+              ' where ', paste(msg_bits, collapse = ' and '))
+    }
   }
 
-  if(is.null(query)) query <- '.'
+  l_vec <- list.files(system.file('lessons', package = pkg), full.names = TRUE)
+  l_df  <- data.frame(lesson_file = l_vec,
+                      lesson = stringr::str_remove(basename(l_vec), '\\..md$'))
 
-  l_vec <- list.files(system.file('lessons', package = pkg),
-                      full.names = TRUE)
-  l_df <- data.frame(lesson_file = l_vec,
-                     lesson = stringr::str_remove(basename(l_vec), '..md$'))
+  ### filename-based filtering
+  if(is.null(query)) {
+    keep_query <- rep(TRUE, nrow(l_df))
+  } else {
+    lesson_txt <- stringr::str_replace_all(tolower(l_df$lesson), "[^a-z0-9]", " ")
+    query_str <- tolower(query) |> paste(collapse = '|')
+    keep_query <- stringr::str_detect(lesson_txt, query_str) |
+      stringr::str_detect(basename(l_vec), query_str)
+  }
 
-  ### change lesson to a sentence format just in case
-  lesson_txt <- stringr::str_replace_all(tolower(l_df$lesson), "[^a-z0-9]", " ")
+  ### pull categories from each lesson's YAML, always (useful for browsing)
+  l_df$categories <- lapply(l_df$lesson_file, get_lesson_categories)
 
-  ### create query string as collapsed vector of OR clauses
-  query_str <- tolower(query) |> paste(collapse = '|')
-  keep_vec <- stringr::str_detect(lesson_txt, query_str) |
-    stringr::str_detect(basename(l_vec), query_str)
+  ### tag-based filtering
+  if(is.null(tags)) {
+    keep_tags <- rep(TRUE, nrow(l_df))
+  } else {
+    tags_lower <- tolower(tags)
+    keep_tags <- vapply(l_df$categories, function(cats) {
+      cats_lower <- tolower(cats)
+      if(match == 'any') any(tags_lower %in% cats_lower) else all(tags_lower %in% cats_lower)
+    }, logical(1))
+  }
 
-  result_df <- l_df[keep_vec, ]
+  result_df <- l_df[keep_query & keep_tags, ]
 
   if(nrow(result_df) == 0) {
-    warning('Note: no lessons are available in ', pkg, ' version ', v, ' that match \"', query_str, '\"...')
+    warning('Note: no lessons in ', pkg, ' version ', v, ' match the given search criteria...')
   }
 
   return(result_df)
+}
+
+### not exported
+get_lesson_categories <- function(path) {
+  yml <- tryCatch(rmarkdown::yaml_front_matter(path), error = function(e) NULL)
+  if(is.null(yml$categories)) return(character(0))
+  as.character(yml$categories)
 }
