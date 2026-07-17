@@ -5,7 +5,6 @@
 \title{Compare differences between local lesson files and version in lessons package}
 \usage{
 compare_diffs(
-  lessons = NULL,
   pkg = "lhLessons",
   org = "nceas-learning-hub",
   pkg_version = NULL,
@@ -15,10 +14,6 @@ compare_diffs(
 )
 }
 \arguments{
-\item{lessons}{A character vector of lessons (possibly incl. a \code{sXX_} prefix, \code{.qmd} suffix,
-or bare lesson name) to check against the lesson package.  Default (\code{NULL})
-will find all local files with \code{sXX_} prefix and check them.}
-
 \item{pkg}{A character name of the lessons package, default \code{lhLessons}.}
 
 \item{org}{Character Github org (or user) where the package lives, default \code{nceas-learning-hub}.}
@@ -38,7 +33,7 @@ be saved as a text file.}
 (default \code{git_diff.txt})
 }
 \description{
-This function uses \verb{git diff} to compare the local version of a lesson to its
+This function uses \verb{git diff} to compare the local versions of lesson to their
 counterpart within a given lessons package (default \code{lhLessons}).  Some notes:
 }
 \details{
@@ -56,6 +51,6 @@ package version.  User should confirm that the lessons package version is up to 
 }
 \examples{
 \dontrun{
-  compare_diffs(lessons = c('git_setup', 's03_r_programming_introduction.qmd'))
+  compare_diffs()
 }
 }
