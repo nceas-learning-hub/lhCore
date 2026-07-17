@@ -26,7 +26,10 @@ checkin_lessons <- function(lessons = NULL,
                             org = 'nceas-learning-hub',
                             branch = NULL) {
 
-  verify_course_repo(query = 'Check in lessons from this course?')
+  if(!verify_course_repo(query = 'Check in lessons from this course?')) {
+    message('Canceling check in...')
+    return()
+  }
 
   ### Set branch to be the name of the course, unless otherwise specified
   ### should this come from course metadata, project directory name, elsewhere?
@@ -38,9 +41,18 @@ checkin_lessons <- function(lessons = NULL,
 
   ### check with the user to make sure it's all good!
   message('Retrieved lessons to check in:', paste0('\n\u2022  ', basename(lessons_df$local)))
-  continue <- readline('Continue with checking in these lessons? (y/n)')
+  continue <- readline('Continue with checking in these lessons? (y/n) ')
   if(tolower(continue) != 'y') {
-    stop('Aborting lesson check in!')
+    message('Canceling lesson check in!')
+    return()
+  }
+
+  ### On Windows, R sets HOME to Documents; Git expects USERPROFILE.
+  ### Temporarily align them so git can find the global .gitconfig.
+  old_home <- Sys.getenv("HOME")
+  if (.Platform$OS.type == "windows" && old_home != Sys.getenv("USERPROFILE")) {
+    Sys.setenv(HOME = Sys.getenv("USERPROFILE"))
+    on.exit(Sys.setenv(HOME = old_home), add = TRUE)
   }
 
   ### message about needing write access to the repo
