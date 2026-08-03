@@ -2,27 +2,46 @@
 % Please edit documentation in R/search_lessons.R
 \name{search_lessons}
 \alias{search_lessons}
-\title{Search available lessons using partial matching}
+\title{Search available lessons using partial matching and/or tags}
 \usage{
-search_lessons(query = NULL, pkg = "lhLessons", quiet = TRUE)
+search_lessons(
+  query = NULL,
+  tags = NULL,
+  pkg = "lhLessons",
+  match = c("any", "all"),
+  quiet = TRUE
+)
 }
 \arguments{
-\item{query}{A character string to search across lessons in the given
-package.  Regular expressions are allowed.  If no query given, returns all available lessons.}
+\item{query}{A character string to search across lesson file names in
+the given package. Regular expressions are allowed. If NULL, all
+lessons pass this filter.}
+
+\item{tags}{A character vector of tags to match against each lesson's
+YAML \verb{categories:} field. If NULL, all lessons pass this filter.}
 
 \item{pkg}{The package to query for lesson availability (default \code{lhLessons})}
+
+\item{match}{When \code{tags} is provided, whether a lesson must match "any"
+(default) of the given tags, or "all" of them.}
 
 \item{quiet}{Provide progress and diagnostic messages during search?
 Default \code{TRUE}.}
 }
 \value{
-A data frame containing the file names (.qmd) of lessons
-from the given package that match the search query.
+A data frame containing the file names (.qmd) of lessons from
+the given package that match the query and/or tags, including a
+\code{categories} column listing each lesson's tags (empty if untagged).
 }
 \description{
-Identify lessons whose file name matches a given search string.  Regular
-expressions are allowed.
+Identify lessons whose file name matches a given search string and/or
+whose YAML \code{categories} field matches one or more tags. Regular
+expressions are allowed in \code{query}.
 }
 \examples{
-\dontrun{search_lessons(query = "github"))}
+\dontrun{
+search_lessons(query = "github")
+search_lessons(tags = c("beginner", "r"))                # matches either tag
+search_lessons(tags = c("beginner", "r"), match = "all") # must have both
+}
 }

@@ -51,7 +51,7 @@
 
 setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwrite = FALSE) {
 
-  verify_course_repo(query = 'Set up course lessons here?')
+  if(!verify_course_repo(query = 'Set up course lessons here? ')) return(FALSE)
 
   ### Query lesson version (checks to ensure lessons package is installed!)
   v <- get_lessons_version(pkg = package, quiet = TRUE)
@@ -59,7 +59,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 
   ### If lessons provided as data.frame, break into separate lesson and module vectors
   if(any(class(lessons) == "data.frame")) {
-    modules <- lessons$module
+    if(is.null(modules) & 'modules' %in% names(lessons)) modules <- lessons$module
     lessons <- lessons$lesson
   }
   ### If lessons provided as a named vector, break into separate lesson and module vectors
@@ -73,7 +73,6 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 
   ### strip qmd and rmd extensions from lesson vector
   lessons <- sub('\\..md$', '', lessons)
-
 
   ### check that all lessons are in lhLessons
   lessons_available <- search_lessons(query = lessons, pkg = package)$lesson
@@ -93,9 +92,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".")
 
   ### copy over lesson-associated folders from lessons package to current project: lessons, images, data
-  copy_folders(lessons, from = "lesson_images", to = "images", pkg = package)
-  copy_folders(lessons, from = "lesson_data",   to = "data",   pkg = package)
-  copy_folders(lessons, from = "lesson_slides", to = "slides", pkg = package)
+  copy_folders(lessons, from = "lesson_images",    to = "images",    pkg = package)
+  copy_folders(lessons, from = "lesson_data",      to = "data",      pkg = package)
+  copy_folders(lessons, from = "lesson_slides",    to = "slides",    pkg = package)
+  copy_folders(lessons, from = "lesson_resources", to = "resources", pkg = package)
 
   ### Set up and write out lessons metadata: module, lesson, lesson files, lesson repo, and repo version
   meta <- data.frame(module = ifelse(exists('modules'), modules, NA),
@@ -127,17 +127,15 @@ copy_lessons <- function(lessons, from, to = ".", pkg) {
   ### copy over files from lessons package to current project
   fs_avail <- search_lessons(lessons) ### built in error check for missing lessons
 
-  fs_to_copy <- fs_avail$lesson_file[order(match(fs_avail$lesson, lessons))]
-
-  fs_out <- sprintf('%s/s%02d_%s', subfolder, 1:length(lessons), basename(fs_to_copy))
+  fs_to_copy <- data.frame(lesson = lessons) |>
+    dplyr::left_join(fs_avail, by = c("lesson")) |>
+    dplyr::mutate(f_out = sprintf('%s/s%02d_%s', subfolder, 1:length(lessons), basename(lesson_file)))
 
   if(length(fs_to_copy) > 0) {
-    file.copy(fs_to_copy, fs_out)
+    file.copy(fs_to_copy$lesson_file, fs_to_copy$f_out)
   }
 
-  return(data.frame(lesson = lessons,
-                    lesson_file_package = basename(fs_to_copy),
-                    lesson_file_course  = basename(fs_out)))
+  return(fs_to_copy)
 }
 
 copy_folders <- function(lessons, from, to, pkg) {

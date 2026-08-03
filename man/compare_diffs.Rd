@@ -5,7 +5,6 @@
 \title{Compare differences between local lesson files and version in lessons package}
 \usage{
 compare_diffs(
-  lessons = NULL,
   pkg = "lhLessons",
   org = "nceas-learning-hub",
   pkg_version = NULL,
@@ -15,10 +14,6 @@ compare_diffs(
 )
 }
 \arguments{
-\item{lessons}{A character vector of lessons (possibly incl. a \code{sXX_} prefix, \code{.qmd} suffix,
-or bare lesson name) to check against the lesson package.  Default (\code{NULL})
-will find all local files with \code{sXX_} prefix and check them.}
-
 \item{pkg}{A character name of the lessons package, default \code{lhLessons}.}
 
 \item{org}{Character Github org (or user) where the package lives, default \code{nceas-learning-hub}.}
@@ -29,7 +24,7 @@ will find all local files with \code{sXX_} prefix and check them.}
 
 \item{prefix}{A character indicator of the expected prefix letter for lesson files.}
 
-\item{file_out}{The location in the current repository where the results will
+\item{file_out}{The location in the current repository where the diff results will
 be saved as a text file.}
 }
 \value{
@@ -38,14 +33,14 @@ be saved as a text file.}
 (default \code{git_diff.txt})
 }
 \description{
-This function uses \verb{git diff} to compare the local version of a lesson to its
+This function uses \verb{git diff} to compare the local versions of lesson to their
 counterpart within a given lessons package (default \code{lhLessons}).  Some notes:
 }
 \details{
 \itemize{
 \item This compares using the (bare) lesson name (e.g., \code{s02_git_setup.qmd} is compared
 to the package lesson named \code{git_setup.qmd}), so if the course designer has changed
-a lesson filename manually, that file will NOT be compared, and assumed to be
+a lesson filename manually (beyond the prefix), that file will NOT be compared, and assumed to be
 a new lesson entirely.
 \item Changes in auxiliary files, e.g., images, slides, or data, will NOT be compared.
 However, if the path to these files change (e.g., new or renamed image), those
@@ -56,6 +51,6 @@ package version.  User should confirm that the lessons package version is up to 
 }
 \examples{
 \dontrun{
-  compare_diffs(lessons = c('git_setup', 's03_r_programming_introduction.qmd'))
+  compare_diffs()
 }
 }
