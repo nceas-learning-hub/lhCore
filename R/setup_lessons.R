@@ -72,7 +72,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   }
 
   ### strip qmd and rmd extensions from lesson vector
-  lessons <- stringr::str_remove(lessons, '\\..md$')
+  lessons <- sub('\\..md$', '', lessons)
 
 
   ### check that all lessons are in lhLessons

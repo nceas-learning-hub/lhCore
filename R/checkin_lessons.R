@@ -112,8 +112,8 @@ resolve_lessons <- function(lessons) {
   }
 
   lessons_df <- data.frame(local = lessons_local)
-  lessons_df$remote <- stringr::str_remove(basename(lessons_local), '^s[0-9]{2}_')
-  lessons_df$name <- stringr::str_remove(lessons_df$remote, '..md$')
+  lessons_df$remote <- sub('^s[0-9]{2}_', '', basename(lessons_local))
+  lessons_df$name <- sub('..md$', '', lessons_df$remote)
 
   return(lessons_df)
 
@@ -140,8 +140,7 @@ checkout_tmp <- function(pkg, org, branch) {
   setwd(file.path(tmp_dir, pkg))
 
   ### create branch if needed and check out
-  branch_check <- system('git branch -a', intern = TRUE) |>
-    stringr::str_remove('^.+/')
+  branch_check <- sub('^.+/', '', system('git branch -a', intern = TRUE))
   b_flag <- ifelse(!branch %in% branch_check, '-b', '')
   x <- system(sprintf('git checkout %s %s', b_flag, branch))
 

@@ -39,7 +39,7 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
 
   quarto_yml_raw <- readr::read_file(quarto_yml_file)
 
-  if(!overwrite & !stringr::str_detect(quarto_yml_raw, "SESSION_LINKS")) {
+  if(!overwrite & !grepl("SESSION_LINKS", quarto_yml_raw)) {
     stop("_quarto.yml: No fields for SESSION_LINKS, and overwrite is FALSE - _quarto.yml file not updated")
   }
 
@@ -51,8 +51,7 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
   lesson_txt <- define_lesson_txt(lessons, modules)
 
   ### Update the _quarto.yml with all the good info!
-  quarto_yml_txt <- quarto_yml_raw |>
-    stringr::str_replace_all(" *# SESSION_LINKS", lesson_txt)
+  quarto_yml_txt <- gsub(" *# SESSION_LINKS", lesson_txt, quarto_yml_raw)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, quarto_yml_file)
@@ -63,7 +62,7 @@ check_git_steps <- function() {
 
   is_git <- dir.exists(here::here('.git'))
   if(is_git) {
-    is_remote <- any(stringr::str_detect(system("git remote -v", intern = TRUE), "^origin"))
+    is_remote <- any(grepl("^origin", system("git remote -v", intern = TRUE)))
   } else {
     is_remote <- FALSE
   }
@@ -86,7 +85,7 @@ check_git_steps <- function() {
   ### Check that git config contains user identity - use local values
   ### This should help avoid problem with Windows using different locs for configs!
   git_config <- system('git config --list', intern = TRUE)
-  config_ok  <- git_config[stringr::str_detect(git_config, "user.name|user.email")]
+  config_ok  <- git_config[grepl("user\\.name|user\\.email", git_config)]
   if(length(config_ok) >= 2) {
     message("User name and email in Git config: \n  \u2022 ", paste0(config_ok, collapse = "\n  \u2022 "))
   } else {

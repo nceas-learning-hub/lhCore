@@ -58,15 +58,15 @@ init_course <- function(course_proj,
                         loc = NULL,
                         quiet = TRUE) {
   ### set up a new project using usethis::create_project(path = "MyNewProject", open = TRUE, rstudio = TRUE)
-  if(stringr::str_detect(course_proj, "[^A-Za-z0-9-_]")) {
+  if(grepl("[^A-Za-z0-9_-]", course_proj)) {
     course_name_old <- course_proj
-    course_proj <- stringr::str_replace_all(course_proj, "[^A-Za-z0-9-_]+", "_")
+    course_proj <- gsub("[^A-Za-z0-9_-]+", "_", course_proj)
     warning("Non-valid characters detected in course project name and fixed.  Old name: ",
             course_name_old, " changed to new name: ", course_proj)
   }
 
   if(is.null(loc)) {
-    if(any(stringr::str_detect(list.files('.'), '.Rproj$'))) {
+    if(any(grepl('\\.Rproj$', list.files('.')))) {
       loc <- '..'
     } else {
       loc <- '.'
@@ -173,7 +173,7 @@ setup_course_structure <- function(template,
   ### Any other files in the course_files folder should be copied to the root of the course
   misc_fs <- list.files(system.file("course_files", package = package),
                         full.names = TRUE)
-  misc_fs <- misc_fs[!dir.exists(misc_fs) & !stringr::str_detect(basename(misc_fs), '_quarto_template.yml|gitignore')]
+  misc_fs <- misc_fs[!dir.exists(misc_fs) & !grepl('_quarto_template\\.yml|gitignore', basename(misc_fs))]
   file.copy(misc_fs, '.')
 
 
@@ -219,10 +219,10 @@ init_quarto_yml <- function(package, repo, overwrite) {
   }
 
   ### Update the _quarto.yml with all the good info!
-  quarto_yml_txt <- readr::read_file(qmd_yml_f_lcl) |>
-    stringr::str_replace_all("COURSE_REPO", course_repo) |>
-    stringr::str_replace_all("COURSE_URL", course_url) |>
-    stringr::str_replace_all("COURSE_TITLE", course_title)
+  quarto_yml_txt <- readr::read_file(qmd_yml_f_lcl)
+  quarto_yml_txt <- gsub("COURSE_REPO",  course_repo,  quarto_yml_txt, fixed = TRUE)
+  quarto_yml_txt <- gsub("COURSE_URL",   course_url,   quarto_yml_txt, fixed = TRUE)
+  quarto_yml_txt <- gsub("COURSE_TITLE", course_title, quarto_yml_txt, fixed = TRUE)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, qmd_yml_f_lcl)
@@ -290,6 +290,6 @@ check_repo_path <- function(repo) {
   x <- getwd()
   if(basename(x) != repo) stop('Mismatch between current working directory and repo name!')
   fs <- list.files(x)
-  if(!any(stringr::str_detect(fs, '.Rproj$'))) stop('Current working directory does not contain .Rproj!')
+  if(!any(grepl('\\.Rproj$', fs))) stop('Current working directory does not contain .Rproj!')
   return('all good')
 }

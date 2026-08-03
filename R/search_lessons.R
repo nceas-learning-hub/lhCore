@@ -27,15 +27,15 @@ search_lessons <- function(query = NULL, pkg = 'lhLessons', quiet = TRUE) {
   l_vec <- list.files(system.file('lessons', package = pkg),
                       full.names = TRUE)
   l_df <- data.frame(lesson_file = l_vec,
-                     lesson = stringr::str_remove(basename(l_vec), '..md$'))
+                     lesson = sub('..md$', '', basename(l_vec)))
 
   ### change lesson to a sentence format just in case
-  lesson_txt <- stringr::str_replace_all(tolower(l_df$lesson), "[^a-z0-9]", " ")
+  lesson_txt <- gsub("[^a-z0-9]", " ", tolower(l_df$lesson))
 
   ### create query string as collapsed vector of OR clauses
   query_str <- tolower(query) |> paste(collapse = '|')
-  keep_vec <- stringr::str_detect(lesson_txt, query_str) |
-    stringr::str_detect(basename(l_vec), query_str)
+  keep_vec <- grepl(query_str, lesson_txt) |
+    grepl(query_str, basename(l_vec))
 
   result_df <- l_df[keep_vec, ]
 

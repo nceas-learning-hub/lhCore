@@ -32,8 +32,7 @@ publish_course <- function() {
 
 setup_gh_pages_branch <- function() {
   ### set up a gh-pages branch if not already
-  branch_check <- system('git branch -a', intern = TRUE) |>
-    stringr::str_remove_all('^.+/|^\\* ')
+  branch_check <- gsub('^.+/|^\\* ', '', system('git branch -a', intern = TRUE))
   if(!"gh-pages" %in% branch_check) {
     x <- system('git checkout -b gh-pages')
     # if(x != 0) {
