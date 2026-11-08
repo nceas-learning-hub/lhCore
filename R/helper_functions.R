@@ -19,7 +19,7 @@ get_course_metadata <- function() {
 verify_course_repo <- function(query = 'Is this the correct course location?') {
   here_dir <- here::here()
 
-  query_string <- paste0('Current project = ', here_dir, '... ', stringr::str_trim(query), ' (y/n) ')
+  query_string <- paste0('Current project = ', here_dir, '... ', trimws(query), ' (y/n) ')
   continue <- readline(query_string)
 
   if(tolower(continue) != 'y') return(FALSE)
@@ -36,7 +36,7 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
 
   quarto_yml_raw <- readr::read_file(quarto_yml_file)
 
-  if(!overwrite && !stringr::str_detect(quarto_yml_raw, "SESSION_LINKS")) {
+  if(!overwrite && !grepl("SESSION_LINKS", quarto_yml_raw)) {
     stop("_quarto.yml: No fields for SESSION_LINKS, and overwrite is FALSE - _quarto.yml file not updated")
   }
 
@@ -48,10 +48,9 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
   lesson_txt <- define_lesson_txt(lessons, modules)
 
   ### Update the _quarto.yml with all the good info!
-  quarto_yml_txt <- quarto_yml_raw |>
-    ### function replacement so backslashes in lesson/module names aren't
-    ### interpreted as regex backreferences
-    stringr::str_replace_all(" *# SESSION_LINKS", function(x) lesson_txt)
+  ### escape backslashes in the replacement so lesson/module names aren't
+  ### interpreted as regex backreferences
+  quarto_yml_txt <- gsub(" *# SESSION_LINKS", gsub("\\", "\\\\", lesson_txt, fixed = TRUE), quarto_yml_raw)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, quarto_yml_file)
@@ -68,7 +67,7 @@ check_git_steps <- function(quiet = FALSE) {
 
   is_git <- dir.exists(file.path(course_dir, '.git'))
   if(is_git) {
-    is_remote <- any(stringr::str_detect(git_out("remote", "-v"), "^origin"))
+    is_remote <- any(grepl("^origin", git_out("remote", "-v")))
   } else {
     is_remote <- FALSE
   }
@@ -92,9 +91,9 @@ check_git_steps <- function(quiet = FALSE) {
   ### Check that git config contains user identity - use local values
   ### This should help avoid problem with Windows using different locs for configs!
   git_config <- git_out("config", "--list")
-  config_ok  <- git_config[stringr::str_detect(git_config, "^user\\.(name|email)=")]
-  has_name   <- any(stringr::str_detect(config_ok, "^user\\.name="))
-  has_email  <- any(stringr::str_detect(config_ok, "^user\\.email="))
+  config_ok  <- git_config[grepl("^user\\.(name|email)=", git_config)]
+  has_name   <- any(grepl("^user\\.name=", config_ok))
+  has_email  <- any(grepl("^user\\.email=", config_ok))
   if(has_name && has_email) {
     ### success info only; problems below are always reported
     if(!quiet) message("User name and email in Git config: \n  \u2022 ", paste0(config_ok, collapse = "\n  \u2022 "))

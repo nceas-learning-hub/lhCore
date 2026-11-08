@@ -25,7 +25,6 @@ Imports:
     readr,
     remotes,
     rmarkdown,
-    stringr,
     usethis,
     utils,
     withr

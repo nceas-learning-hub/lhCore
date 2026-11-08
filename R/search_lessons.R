@@ -57,16 +57,16 @@ search_lessons <- function(query = NULL, tags = NULL, pkg = 'lhLessons',
   ### only lesson documents (.qmd/.Rmd/.md), so stray files aren't treated as lessons
   l_vec <- list.files(lessons_dir, pattern = '\\.[qQrR]?md$', full.names = TRUE)
   l_df  <- data.frame(lesson_file = l_vec,
-                      lesson = stringr::str_remove(basename(l_vec), '\\.[qQrR]?md$'))
+                      lesson = sub('\\.[qQrR]md$', '', basename(l_vec)))
 
   ### filename-based filtering
   if(is.null(query)) {
     keep_query <- rep(TRUE, nrow(l_df))
   } else {
-    lesson_txt <- stringr::str_replace_all(tolower(l_df$lesson), "[^a-z0-9]", " ")
-    query_str <- tolower(query) |> paste(collapse = '|')
-    keep_query <- stringr::str_detect(lesson_txt, query_str) |
-      stringr::str_detect(basename(l_vec), query_str)
+    lesson_txt <- gsub("[^a-z0-9]", " ", tolower(l_df$lesson))
+    query_str <- paste(tolower(query), collapse = '|')
+    keep_query <- grepl(query_str, lesson_txt) |
+                  grepl(query_str, basename(l_vec))
   }
 
   ### pull categories from each lesson's YAML, always (useful for browsing)

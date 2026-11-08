@@ -22,9 +22,8 @@ query_lessons_tags <- function(pkg, org = 'nceas-learning-hub',
          'check the repository name, your network connection, and that git is installed)')
   }
   ### annotated tags appear twice, the second time as "<tag>^{}" - drop those
-  tags_vec <- sys_out |>
-    stringr::str_remove('^.+refs/tags/') |>
-    stringr::str_subset('\\^\\{\\}$', negate = TRUE)
+  tags_vec <- sub('^.+refs/tags/', '', sys_out)
+  tags_vec <- tags_vec[!grepl('\\^\\{\\}$', tags_vec)]
   if(!quiet) message(pkg, ' tags: \n', paste0('   ', tags_vec, collapse = '\n'))
   if(latest) {
     latest_tag <- select_latest_tag(tags_vec)
@@ -53,8 +52,8 @@ get_default_branch <- function(pkg, org = 'nceas-learning-hub') {
 parse_default_branch <- function(ls_remote_lines) {
   ### `git ls-remote --symref <url> HEAD` prints "ref: refs/heads/<branch>\tHEAD"
   ### followed by the commit hash line
-  branch <- stringr::str_match(ls_remote_lines, '^ref: refs/heads/(.+)\\tHEAD$')[, 2]
-  branch <- branch[!is.na(branch)]
+  is_ref <- grepl('^ref: refs/heads/(.+)\\tHEAD$', ls_remote_lines)
+  branch <- sub('^ref: refs/heads/(.+)\\tHEAD$', '\\1', ls_remote_lines[is_ref])
   if(length(branch) == 0) return(NA_character_)
   return(branch[1])
 }

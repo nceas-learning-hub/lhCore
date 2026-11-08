@@ -82,7 +82,7 @@ compare_diffs <- function(pkg = 'lhLessons',
 
   ### Clean lesson filenames to bare lesson names
   make_bare <- function(x) {
-    stringr::str_remove_all(basename(x), paste0('^', prefix, '[0-9]{2}_|\\.[qQrR]?md$'))
+    gsub(paste0('^', prefix, '[0-9]{2}_|\\.[qQrR]?md$'), '', basename(x))
   }
   lessons_df <- data.frame(file_local = lessons_local,
                            bare = make_bare(lessons_local))

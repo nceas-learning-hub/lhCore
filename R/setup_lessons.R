@@ -80,7 +80,7 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   }
 
   ### strip qmd and rmd extensions from lesson vector
-  lessons <- stringr::str_remove(lessons, '\\.[qQrR]?md$')
+  lessons <- sub('\\.[qQrR]?md$', '', lessons)
 
   ### check that all lessons are in the lessons package (exact name match)
   lessons_available <- search_lessons(pkg = package)$lesson

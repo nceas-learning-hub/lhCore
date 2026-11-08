@@ -112,8 +112,8 @@ resolve_lessons <- function(lessons) {
   }
 
   lessons_df <- data.frame(local = lessons_local)
-  lessons_df$remote <- stringr::str_remove(basename(lessons_local), '^s[0-9]{2}_')
-  lessons_df$name <- stringr::str_remove(lessons_df$remote, '\\.[qQrR]?md$')
+  lessons_df$remote <- sub('^s[0-9]{2}_', '', basename(lessons_local))
+  lessons_df$name <- sub('\\.[qQrR]?md$', '', lessons_df$remote)
 
   return(lessons_df)
 
