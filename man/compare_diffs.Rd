@@ -8,7 +8,7 @@ compare_diffs(
   pkg = "lhLessons",
   org = "nceas-learning-hub",
   pkg_version = NULL,
-  branch = "main",
+  branch = NULL,
   prefix = "s",
   file_out = "git_diff.txt"
 )
@@ -18,9 +18,12 @@ compare_diffs(
 
 \item{org}{Character Github org (or user) where the package lives, default \code{nceas-learning-hub}.}
 
-\item{pkg_version}{Character Version tag for package, default NULL indicates latest.}
+\item{pkg_version}{Optional version to compare against: a tag, commit, or
+version as accepted by \code{remotes::install_github()}'s \code{ref}.  Default \code{NULL}
+uses \code{branch}.  If both are given, \code{pkg_version} is used.}
 
-\item{branch}{A character name of the branch to be checked.  Currently only checks against \code{main}.}
+\item{branch}{A character name of the branch to compare against.  Default \code{NULL}
+looks up the default branch of the lessons repository.}
 
 \item{prefix}{A character indicator of the expected prefix letter for lesson files.}
 
@@ -30,7 +33,8 @@ be saved as a text file.}
 \value{
 (invisibly) a data frame containing \code{file_remote}, \code{file_local},
 \code{result} (of \verb{git diff}) and \code{status}.  Writes results out to a text file
-(default \code{git_diff.txt})
+(default \code{git_diff.txt}).  Note \code{file_remote} points into the temporary
+library, which no longer exists once the function returns.
 }
 \description{
 This function uses \verb{git diff} to compare the local versions of lesson to their
@@ -45,8 +49,12 @@ a new lesson entirely.
 \item Changes in auxiliary files, e.g., images, slides, or data, will NOT be compared.
 However, if the path to these files change (e.g., new or renamed image), those
 changes in the lesson file will be noted.
-\item As of now, checks against the \code{main} branch of the currently installed lessons
-package version.  User should confirm that the lessons package version is up to date!
+\item The lessons package is installed fresh from GitHub into a temporary library
+(removed afterwards) and compared against, so the comparison never depends
+on which version you happen to have installed.  By default this is the latest
+version on the default branch of the lessons repository (looked up on GitHub,
+not assumed to be \code{main}); use \code{branch} or \code{pkg_version} to compare against
+something else.
 }
 }
 \examples{

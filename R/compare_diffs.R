@@ -10,21 +10,29 @@
 #' * Changes in auxiliary files, e.g., images, slides, or data, will NOT be compared.
 #'   However, if the path to these files change (e.g., new or renamed image), those
 #'   changes in the lesson file will be noted.
-#' * As of now, checks against the `main` branch of the currently installed lessons
-#'   package version.  User should confirm that the lessons package version is up to date!
+#' * The lessons package is installed fresh from GitHub into a temporary library
+#'   (removed afterwards) and compared against, so the comparison never depends
+#'   on which version you happen to have installed.  By default this is the latest
+#'   version on the default branch of the lessons repository (looked up on GitHub,
+#'   not assumed to be `main`); use `branch` or `pkg_version` to compare against
+#'   something else.
 #'
 #'
 #' @param pkg A character name of the lessons package, default `lhLessons`.
 #' @param org Character Github org (or user) where the package lives, default `nceas-learning-hub`.
-#' @param pkg_version Character Version tag for package, default NULL indicates latest.
-#' @param branch A character name of the branch to be checked.  Currently only checks against `main`.
+#' @param pkg_version Optional version to compare against: a tag, commit, or
+#'     version as accepted by `remotes::install_github()`'s `ref`.  Default `NULL`
+#'     uses `branch`.  If both are given, `pkg_version` is used.
+#' @param branch A character name of the branch to compare against.  Default `NULL`
+#'     looks up the default branch of the lessons repository.
 #' @param prefix A character indicator of the expected prefix letter for lesson files.
 #' @param file_out The location in the current repository where the diff results will
 #'     be saved as a text file.
 #'
 #' @returns (invisibly) a data frame containing `file_remote`, `file_local`,
 #'     `result` (of `git diff`) and `status`.  Writes results out to a text file
-#'     (default `git_diff.txt`)
+#'     (default `git_diff.txt`).  Note `file_remote` points into the temporary
+#'     library, which no longer exists once the function returns.
 #' @export
 #'
 #' @examples \dontrun{
@@ -34,68 +42,79 @@
 compare_diffs <- function(pkg = 'lhLessons',
                           org = 'nceas-learning-hub',
                           pkg_version = NULL,
-                          branch = 'main',
+                          branch = NULL,
                           prefix = 's', file_out = 'git_diff.txt') {
 
-  installed_version <- get_lessons_version(pkg, quiet = TRUE)
-  repo_version <- query_lessons_tags(pkg, org = org, latest = TRUE, quiet = TRUE)
-  if(repo_version > installed_version) {
-    warning('Your installed version of ', pkg, ' (', installed_version, ') is older than the latest version in the repository (', repo_version, ').  Consider updating to ensure you are comparing against the most up-to-date lessons!')
-    user_input <- readline('Compare diffs against current version? (y/n) ')
-    if(tolower(user_input) != 'y') message('aborting!'); return(NULL)
+  ### decide what to compare against: a specific version/tag/commit, a named
+  ### branch, or (default) the lessons repo's default branch, looked up rather
+  ### than assumed to be "main"
+  if(is.null(pkg_version) && is.null(branch)) {
+    branch <- get_default_branch(pkg, org = org)
+    if(is.na(branch)) branch <- NULL ### remote reports none; install_github() uses its default
+  }
+  ref <- if(!is.null(pkg_version)) pkg_version else branch
+  ref_label <- if(!is.null(pkg_version)) {
+    paste0('version ', pkg_version)
+  } else if(!is.null(branch)) {
+    paste0('branch ', branch)
+  } else {
+    'default branch'
   }
 
-  if(is.null(lessons)) {
-    ### if NULL, check *all* local lessons - identified by appropriate prefix
-    lessons_local <- list.files(here::here(), pattern = paste0(prefix, '[0-9]{2}_'), full.names = TRUE)
-    lessons_local <- lessons_local[!grepl('^s00_', basename(lessons_local))]
-  }
+  ### install that version into a temp library, removed on exit (even on error)
+  tmp_lib <- tempfile()
+  dir.create(tmp_lib)
+  on.exit(unlink(tmp_lib, recursive = TRUE), add = TRUE)
+
+  message('Installing ', pkg, ' (', ref_label, ') from GitHub into a temporary library...')
+  ### "prefix" installs into tmp_lib while keeping the user's libraries visible
+  ### for dependencies; upgrade = "never" avoids prompts about other packages
+  withr::with_libpaths(tmp_lib, action = 'prefix', {
+    remotes::install_github(sprintf('%s/%s', org, pkg), ref = ref,
+                            upgrade = 'never', quiet = TRUE)
+  })
+  new_version <- as.character(utils::packageVersion(pkg, lib.loc = tmp_lib))
+  message('Comparing local lessons to ', pkg, ' ', new_version, ' (', ref_label, ')')
+
+  ### check *all* local lessons - identified by appropriate prefix (ignore 00)
+  lessons_local <- list.files(here::here(), pattern = paste0('^', prefix, '[0-9]{2}_'), full.names = TRUE)
+  lessons_local <- lessons_local[!grepl(paste0('^', prefix, '00_'), basename(lessons_local))]
 
   ### Clean lesson filenames to bare lesson names
   make_bare <- function(x) {
-    stringr::str_remove_all(basename(x), paste0('^', prefix, '[0-9]{2}_|\\..md$'))
+    stringr::str_remove_all(basename(x), paste0('^', prefix, '[0-9]{2}_|\\.[qQrR]?md$'))
   }
   lessons_df <- data.frame(file_local = lessons_local,
                            bare = make_bare(lessons_local))
 
   ### Check local lessons against those in package via search_lessons(),
   ### so any local lessons not in package might indicate new lessons.
-  lessons_check <- search_lessons(pkg = pkg)
+  lessons_avail <- search_lessons(pkg = pkg, lib.loc = tmp_lib)
 
-  lesson_new <- lessons_df[!lessons_df$bare %in% lessons_check$lesson, ]
+  ### New lessons: add result, status to match git diff output
+  lesson_new <- lessons_df[!lessons_df$bare %in% lessons_avail$lesson, ]
+  new_lesson_df <- NULL
   if(nrow(lesson_new) > 0) {
     warning('Lesson(s) detected in course but not listed in package: potentially new?',
             paste('\n  \u2022 ', lesson_new$bare, collapse = '\n  \u2022'))
-    new_lesson_df <- data.frame(file_remote = NA,
-                                file_local = lesson_new$lesson,
+    new_lesson_df <- data.frame(file_remote = NA_character_,
+                                file_local = lesson_new$file_local,
                                 result = 'New file detected',
                                 status = 2)
   }
 
-  ### Check that lessons all come from the desired package!
-  # pkg_check <- lessons_meta[lessons_meta$package != pkg, ]
-  # if(nrow(pkg_check) > 0) {
-  #   print(pkg_check)
-  #   stop('One or more lessons come from a different package than ', pkg, '!!!')
-  # }
-
   ### Lessons to compare differences:
-  lessons_avail <- search_lessons(pkg = pkg)
   lessons_compare <- lessons_avail |>
     dplyr::inner_join(lessons_df, by = c('lesson' = 'bare'))
 
-  ### New lessons: add result, status to match git diff
-  lessons_new <- lessons_df[!lessons_df$bare %in% lessons_avail$lesson, ]
-  lessons_new <- lessons_new['file_local']
-  lessons_new$result = 'New file'; lessons_new$status = 2
-
   ### process git diffs, write to .txt, and report changed lessons to user
-  diffs_df <- purrr::map2_df(.x = lessons_compare$lesson_file,
-                             .y = lessons_compare$lesson_local,
-                             .f = git_diff)
+  diffs_df <- purrr::map2(.x = lessons_compare$lesson_file,
+                          .y = lessons_compare$file_local,
+                          .f = git_diff) |>
+    dplyr::bind_rows()
 
   ### append new lessons, if they have been detected
-  if(exists('new_lesson_df')) diffs_df <- rbind(diffs_df, new_lesson_df)
+  diffs_df <- dplyr::bind_rows(diffs_df, new_lesson_df)
 
   diffs_txt <- paste(basename(diffs_df$file_local), '\n\n', diffs_df$result,
                      collapse = '\n\n\n====================\n\n\n')
@@ -104,38 +123,51 @@ compare_diffs <- function(pkg = 'lhLessons',
 
   ### Report out files with changes
   files_changed <- diffs_df$file_local[diffs_df$status == 1] |> basename()
-  out_msg <- ifelse(length(files_changed) == 0,
-                    '\nNo file differences detected!',
-                    sprintf('\nFiles with changes detected: \n  \u2022  %s',
-                            paste0(files_changed, collapse = '\n  \u2022  ')))
-  cat(out_msg)
+  out_msg <- if(length(files_changed) == 0) {
+    'No file differences detected!'
+  } else {
+    sprintf('Files with changes detected: \n  \u2022  %s',
+            paste0(files_changed, collapse = '\n  \u2022  '))
+  }
+  message(out_msg)
 
   ### Report out new files
   files_new <- diffs_df$file_local[diffs_df$status == 2] |> basename()
-  out_msg <- ifelse(length(files_new) == 0,
-                    '\nNo new files detected!',
-                    sprintf('\nNew files detected: \n  \u2022  %s',
-                            paste0(files_new, collapse = '\n  \u2022  ')))
-  cat(out_msg)
-
+  out_msg <- if(length(files_new) == 0) {
+    'No new files detected!'
+  } else {
+    sprintf('New files detected: \n  \u2022  %s',
+            paste0(files_new, collapse = '\n  \u2022  '))
+  }
+  message(out_msg)
 
   return(invisible(diffs_df))
 }
 
 git_diff <- function(f_remote, f_local, word_diff = FALSE) {
-  w_d <- ifelse(word_diff, '--word-diff', '')
-  diff_string <- sprintf('git diff --no-index %s %s %s', w_d, f_remote, f_local)
+  ### `git diff --no-index` exits 1 for a missing file just as it does for a real
+  ### difference, so check explicitly rather than report a false "changed"
+  missing_f <- c(f_remote, f_local)[!file.exists(c(f_remote, f_local))]
+  if(length(missing_f) > 0) stop('Cannot compare, file not found: ', paste(missing_f, collapse = ', '))
 
-  ### returns a vector of lines returned from `git diff`, status 1 if diff, status 0 if not
-  suppressWarnings(diff_vec <- system(diff_string, intern = TRUE))
+  w_d <- if(word_diff) '--word-diff' else character(0)
+  diff_args <- c('diff', '--no-index', w_d, shQuote(f_remote), shQuote(f_local))
 
-  if(length(diff_vec) == 0) {
+  ### returns a vector of lines from `git diff`.  stderr is discarded because on
+  ### Windows it gets mixed into the captured output, and git warnings there
+  ### (e.g., "LF will be replaced by CRLF") would be mistaken for differences.
+  ### `git diff --no-index` exits 0 if the files match, 1 if they differ (which
+  ### system2() warns about), and higher on a real error; the exit code is only
+  ### attached as the "status" attribute when non-zero.
+  diff_vec <- suppressWarnings(system2('git', diff_args, stdout = TRUE, stderr = FALSE))
+  status <- attr(diff_vec, 'status')
+  if(is.null(status)) status <- 0
+  if(status > 1) stop('git diff failed (exit status ', status, ') comparing ', f_remote, ' and ', f_local)
+
+  if(status == 0) {
     ### No differences!
-    result = 'No difference detected'
-    status = 0
+    result <- 'No difference detected'
   } else {
-    status <- attr(diff_vec, 'status')
-
     ### collapse into a single string with line breaks
     result <- paste0(diff_vec, collapse = '\n')
   }

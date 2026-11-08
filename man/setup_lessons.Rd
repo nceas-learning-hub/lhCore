@@ -27,9 +27,12 @@ if \code{modules} is not NULL, and module names are provided directly in \code{l
 this argument will take precedence.}
 
 \item{overwrite}{If there is already an existing lessons structure, and
-\code{overwrite = FALSE}, will return an error.  If the user wishes to create
-a new lesson structure, then \code{overwrite = TRUE} will remove the existing
-lesson structure in its entirety and create a new structure}
+\code{overwrite = FALSE}, will return an error.  Not yet implemented:
+\code{overwrite = TRUE} currently stops with an error asking the user to
+manually delete installed lesson files first.}
+}
+\value{
+NULL (invisibly)
 }
 \description{
 Create the structure necessary to implement an ordered set of lessons in the Quarto book format.

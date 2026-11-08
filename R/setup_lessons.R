@@ -18,11 +18,11 @@
 #'     if `modules` is not NULL, and module names are provided directly in `lessons`,
 #'     this argument will take precedence.
 #' @param overwrite If there is already an existing lessons structure, and
-#'     `overwrite = FALSE`, will return an error.  If the user wishes to create
-#'     a new lesson structure, then `overwrite = TRUE` will remove the existing
-#'     lesson structure in its entirety and create a new structure
+#'     `overwrite = FALSE`, will return an error.  Not yet implemented:
+#'     `overwrite = TRUE` currently stops with an error asking the user to
+#'     manually delete installed lesson files first.
 #'
-#' @return NULL
+#' @return NULL (invisibly)
 #'
 #' @examples
 #' \dontrun{
@@ -51,45 +51,48 @@
 
 setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwrite = FALSE) {
 
-  if(!verify_course_repo(query = 'Set up course lessons here? ')) return(FALSE)
+  ### overwrite isn't implemented yet; fail before doing any work
+  if(overwrite) {
+    stop("in setup_lessons(), need to add functionality to remove old lessons from _quarto.yml and old files before overwriting!",
+         "\nMeanwhile, manually delete any installed lesson files, then rerun the function with overwrite = FALSE (default) ")
+  }
+
+  if(!verify_course_repo(query = 'Set up course lessons here? ')) return(invisible(NULL))
 
   ### Query lesson version (checks to ensure lessons package is installed!)
   v <- get_lessons_version(pkg = package, quiet = TRUE)
   message("Installing lessons from ", package, ", version ", v, "...")
 
   ### If lessons provided as data.frame, break into separate lesson and module vectors
-  if(any(class(lessons) == "data.frame")) {
-    if(is.null(modules) & 'modules' %in% names(lessons)) modules <- lessons$module
+  if(is.data.frame(lessons)) {
+    if(is.null(modules) && 'module' %in% names(lessons)) modules <- lessons$module
     lessons <- lessons$lesson
   }
   ### If lessons provided as a named vector, break into separate lesson and module vectors
-  ### because names are a fragile attribute...
+  ### because names are a fragile attribute...  An explicit `modules` argument
+  ### takes precedence over names (as documented).
   if(!is.null(names(lessons))) {
-    modules <- names(lessons)
+    if(is.null(modules)) modules <- names(lessons)
+    lessons <- unname(lessons)
   }
   if(!is.null(modules)) {
     if(length(modules) != length(lessons)) stop('Length of lessons and modules must match!')
   }
 
   ### strip qmd and rmd extensions from lesson vector
-  lessons <- stringr::str_remove(lessons, '\\..md$')
+  lessons <- stringr::str_remove(lessons, '\\.[qQrR]?md$')
 
-  ### check that all lessons are in lhLessons
-  lessons_available <- search_lessons(query = lessons, pkg = package)$lesson
+  ### check that all lessons are in the lessons package (exact name match)
+  lessons_available <- search_lessons(pkg = package)$lesson
   lessons_missing <- lessons[!lessons %in% lessons_available]
-  if(length(lessons_missing) > 0) stop("Some lessons are not found in the ', package, ' package:",
+  if(length(lessons_missing) > 0) stop("Some lessons are not found in the ", package, " package:",
                                        paste0("\n\u25CF ", lessons_missing))
 
-  ### Set up _quarto.yml with appropriate links to lessons
-  if(overwrite) {
-    stop("in setup_lessons(), need to add functionality to remove old lessons from _quarto.yml and old files before overwriting!",
-         "\nMeanwhile, manually delete any installed lesson files, then rerun the function with overwrite = FALSE (default) ")
-  }
-  ### set up _quarto.yml with links to sessions (other info in setup_course_structure.R)
+  ### set up _quarto.yml with links to sessions (other info set up in init_course())
   setup_quarto_yml(lessons, modules, overwrite)
 
   ### copy over lesson files from lessons package to current project: lessons, images, data, _extensions
-  lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".")
+  lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".", pkg = package)
 
   ### copy over lesson-associated folders from lessons package to current project: lessons, images, data
   copy_folders(lessons, from = "lesson_images",    to = "images",    pkg = package)
@@ -98,19 +101,19 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   copy_folders(lessons, from = "lesson_resources", to = "resources", pkg = package)
 
   ### Set up and write out lessons metadata: module, lesson, lesson files, lesson repo, and repo version
-  meta <- data.frame(module = ifelse(exists('modules'), modules, NA),
+  meta <- data.frame(module = if(is.null(modules)) NA_character_ else modules,
                      lesson = lessons) |>
     dplyr::left_join(lessons_copied, by = 'lesson') |>
     dplyr::mutate(package = package, pkg_version = v)
   readr::write_csv(meta, here::here('metadata_lessons.csv'))
 
-  message("Course populated with lessons!  Refresh the file pane to see the
-          course files and folders.\n")
+  message("Course populated with lessons!  Refresh the file pane to see the course files and folders.\n")
 
   message("To render the course book, restart RStudio to activate the Build tab.")
 
   check_git_steps()
 
+  return(invisible(NULL))
 }
 
 ### not exported!
@@ -122,39 +125,47 @@ copy_lessons <- function(lessons, from, to = ".", pkg) {
 
   ### create subfolder as needed
   subfolder <- here::here(to)
-  if(!dir.exists(subfolder)) dir.create(subfolder)
+  if(!dir.exists(subfolder)) dir.create(subfolder, recursive = TRUE)
 
-  ### copy over files from lessons package to current project
-  fs_avail <- search_lessons(lessons) ### built in error check for missing lessons
+  ### copy over files from lessons package to current project; must search
+  ### the requested package, and the join keeps only exact lesson-name matches
+  fs_avail <- search_lessons(pkg = pkg)
 
   fs_to_copy <- data.frame(lesson = lessons) |>
-    dplyr::left_join(fs_avail, by = c("lesson")) |>
-    dplyr::mutate(f_out = sprintf('%s/s%02d_%s', subfolder, 1:length(lessons), basename(lesson_file)))
+    dplyr::left_join(fs_avail, by = c("lesson"))
+  ### base assignment (not mutate) avoids a bare column name that R CMD check flags
+  fs_to_copy$f_out <- file.path(subfolder,
+                                sprintf('s%02d_%s', seq_along(lessons), basename(fs_to_copy$lesson_file)))
 
-  if(length(fs_to_copy) > 0) {
-    file.copy(fs_to_copy$lesson_file, fs_to_copy$f_out)
+  if(nrow(fs_to_copy) > 0) {
+    copied <- file.copy(fs_to_copy$lesson_file, fs_to_copy$f_out)
+    if(any(!copied)) {
+      warning('Some lesson files failed to copy:',
+              paste0('\n\u2022  ', basename(fs_to_copy$lesson_file[!copied])))
+    }
   }
 
   return(fs_to_copy)
 }
 
-copy_folders <- function(lessons, from, to, pkg) {
+copy_folders <- function(lessons, from, to, pkg, lib.loc = NULL, overwrite = FALSE) {
   ### from is the directory to copy lessons from (inside the lessons package);
   ### to is the directory to copy the lessons to (inside the course repository)
   ### lessons is the list of lesson filenames;
+  ### lib.loc locates a non-default install of pkg (used by update_lessons())
 
   ### create subfolder as needed
   subfolder <- here::here(to)
-  if(!dir.exists(subfolder)) dir.create(subfolder)
+  if(!dir.exists(subfolder)) dir.create(subfolder, recursive = TRUE)
 
-  lessons <- sub("\\..md", "", lessons) ### strip extension if necessary
+  lessons <- sub("\\.[qQrR]?md$", "", lessons) ### strip extension if necessary
 
   ### copy over folders and files from lessons package to current project
-  fs_available <- list.files(system.file(from, package = pkg), full.names = TRUE)
+  fs_available <- list.files(system.file(from, package = pkg, lib.loc = lib.loc), full.names = TRUE)
   fs_to_copy <- fs_available[basename(fs_available) %in% lessons]
 
   if(length(fs_to_copy) > 0) {
-    file.copy(fs_to_copy, subfolder, recursive = TRUE)
+    file.copy(fs_to_copy, subfolder, recursive = TRUE, overwrite = overwrite)
   }
 
 }
@@ -166,7 +177,7 @@ define_lesson_txt <- function(lessons, modules) {
     ### if lessons is not a named vector, simple case
     ### `lessons` vector is bare filenames, no extension - standardize to .qmd
     lesson_txt <- sprintf("      - s%02d_%s.qmd",
-                           1:length(lessons), lessons) |>
+                           seq_along(lessons), lessons) |>
       paste(collapse = "\n")
   } else {
     message("Module names detected...")
@@ -176,8 +187,7 @@ define_lesson_txt <- function(lessons, modules) {
     names(mod_vec) <- mod_names
 
     ### number the lessons first; attach module names
-    lsn_path <- sprintf('s%02d_%s', 1:length(lessons), lessons)
-    names(lsn_path) <- names(lessons)
+    lsn_path <- sprintf('s%02d_%s', seq_along(lessons), lessons)
 
     ### loop over modules to create a unique set for each, with part and chapter
     for(mod in mod_names) {

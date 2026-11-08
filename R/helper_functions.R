@@ -1,9 +1,9 @@
 ### get_course_metadata
-### verify course_repo
+### verify_course_repo
 ### setup_quarto_yml
 ### check_git_steps
 
-get_course_metadata <- function(repo = NULL) {
+get_course_metadata <- function() {
   ### get metadata from metadata_course.csv
   if(!file.exists('metadata_course.csv')) {
     stop('No metadata_course.csv detected in the current location: ', getwd())
@@ -36,7 +36,7 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
 
   quarto_yml_raw <- readr::read_file(quarto_yml_file)
 
-  if(!overwrite & !stringr::str_detect(quarto_yml_raw, "SESSION_LINKS")) {
+  if(!overwrite && !stringr::str_detect(quarto_yml_raw, "SESSION_LINKS")) {
     stop("_quarto.yml: No fields for SESSION_LINKS, and overwrite is FALSE - _quarto.yml file not updated")
   }
 
@@ -49,23 +49,32 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
 
   ### Update the _quarto.yml with all the good info!
   quarto_yml_txt <- quarto_yml_raw |>
-    stringr::str_replace_all(" *# SESSION_LINKS", lesson_txt)
+    ### function replacement so backslashes in lesson/module names aren't
+    ### interpreted as regex backreferences
+    stringr::str_replace_all(" *# SESSION_LINKS", function(x) lesson_txt)
 
   ### write out updated yml file
   readr::write_file(quarto_yml_txt, quarto_yml_file)
 }
 
-check_git_steps <- function() {
+check_git_steps <- function(quiet = FALSE) {
   ### If repo is git and github enabled, return TRUE, otherwise give user message and return FALSE
 
-  is_git <- dir.exists(here::here('.git'))
+  ### run git against the course project (not whatever the working directory is)
+  course_dir <- here::here()
+  git_out <- function(...) {
+    suppressWarnings(system2("git", c("-C", shQuote(course_dir), ...), stdout = TRUE, stderr = FALSE))
+  }
+
+  is_git <- dir.exists(file.path(course_dir, '.git'))
   if(is_git) {
-    is_remote <- any(stringr::str_detect(system("git remote -v", intern = TRUE), "^origin"))
+    is_remote <- any(stringr::str_detect(git_out("remote", "-v"), "^origin"))
   } else {
     is_remote <- FALSE
   }
 
-  course_org <- get_course_metadata()["course_org"]
+  ### org is only needed for the setup hints below
+  if(!is_git || !is_remote) course_org <- get_course_metadata()["course_org"]
 
   if(!is_git) {
     message("This project does not seem to be a Git repository.  You might want to:",
@@ -82,10 +91,13 @@ check_git_steps <- function() {
 
   ### Check that git config contains user identity - use local values
   ### This should help avoid problem with Windows using different locs for configs!
-  git_config <- system('git config --list', intern = TRUE)
-  config_ok  <- git_config[stringr::str_detect(git_config, "user.name|user.email")]
-  if(length(config_ok) >= 2) {
-    message("User name and email in Git config: \n  \u2022 ", paste0(config_ok, collapse = "\n  \u2022 "))
+  git_config <- git_out("config", "--list")
+  config_ok  <- git_config[stringr::str_detect(git_config, "^user\\.(name|email)=")]
+  has_name   <- any(stringr::str_detect(config_ok, "^user\\.name="))
+  has_email  <- any(stringr::str_detect(config_ok, "^user\\.email="))
+  if(has_name && has_email) {
+    ### success info only; problems below are always reported
+    if(!quiet) message("User name and email in Git config: \n  \u2022 ", paste0(config_ok, collapse = "\n  \u2022 "))
   } else {
     message("User name and/or email not detected in Git config!")
     if(.Platform$OS.type == 'windows') {

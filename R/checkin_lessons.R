@@ -32,7 +32,8 @@ checkin_lessons <- function(lessons = NULL,
   }
 
   ### Set branch to be the name of the course, unless otherwise specified
-  ### should this come from course root dir name?
+  ### should this come from course root dir name? or the default branch of the
+  ### package repo?
   course_name <- basename(here::here())
   if(is.null(branch)) branch <- course_name
 
@@ -47,21 +48,13 @@ checkin_lessons <- function(lessons = NULL,
     return()
   }
 
-  ### On Windows, R sets HOME to Documents; Git expects USERPROFILE.
-  ### Temporarily align them so git can find the global .gitconfig.
-  old_home <- Sys.getenv("HOME")
-  if (.Platform$OS.type == "windows" && old_home != Sys.getenv("USERPROFILE")) {
-    Sys.setenv(HOME = Sys.getenv("USERPROFILE"))
-    on.exit(Sys.setenv(HOME = old_home), add = TRUE)
-  }
-
   ### message about needing write access to the repo
 
   ### check out repo to temp dir and create (or identify) branch
   repo_tmp_dir <- checkout_tmp(pkg = pkg, org = org, branch = branch)
 
   ### set up an on.exit() to delete temp dir in case something errors out
-  on.exit(unlink(repo_tmp_dir, recursive = TRUE))
+  on.exit(unlink(repo_tmp_dir, recursive = TRUE), add = TRUE)
 
   ### copy relevant files over; overwrite existing versions incl entire folders
   copy_lessons_to_checkin(lessons_df, repo_tmp_dir)
@@ -70,31 +63,25 @@ checkin_lessons <- function(lessons = NULL,
   copy_files_to_checkin(lessons_df, 'images',    repo_tmp_dir)
   copy_files_to_checkin(lessons_df, 'resources', repo_tmp_dir)
 
-  ### check with user after git add --all
-  course_repo <- here::here()
-  setwd(repo_tmp_dir)
-  x <- system('git add --all')
-  msg <- system('git status', intern = TRUE)
-  message(paste0(msg, collapse = '\n'))
+  ### stage all changes (new, modified and deleted files), then check with the user.
+  ### All gert calls point at the temp repo via `repo`, so the working directory
+  ### is never changed.
+  gert::git_add('.', repo = repo_tmp_dir)
+  changes <- gert::git_status(staged = TRUE, repo = repo_tmp_dir)
+  if(nrow(changes) == 0) stop('No changes to check in: the lessons match the repository already!')
+  message('Changes to be committed:',
+          paste0('\n\u2022  ', changes$status, ': ', changes$file))
   continue <- readline('Ready to commit these changes? (y/n) ')
   if(tolower(continue) != 'y') {
     stop('Aborting lesson check in!')
   }
 
-  ### commit changes
+  ### commit, then pull (in case others pushed to this branch) and push
   msg <- paste0('lhCore::checkin_lessons(): Checking in lessons from course ',
                 course_name, ' to branch ', branch)
-  x <- system(sprintf('git commit -m "%s"', msg))
-  x <- system('git pull')
-  if(x != 0) {
-    stop('Uh oh, error when pulling remote!')
-  }
-  x <- system('git push')
-
-  setwd(course_repo)
-
-  ### delete temp dir
-  unlink(repo_tmp_dir, recursive = TRUE)
+  gert::git_commit(msg, repo = repo_tmp_dir)
+  gert::git_pull(repo = repo_tmp_dir)
+  gert::git_push(repo = repo_tmp_dir)
 }
 
 resolve_lessons <- function(lessons) {
@@ -103,8 +90,7 @@ resolve_lessons <- function(lessons) {
     lessons_local <- list.files(here::here(),
                                 pattern = '^s[0-9]{2}_',
                                 full.names = TRUE)
-  }
-  if(is.character(lessons)) {
+  } else if(is.character(lessons)) {
     ### if character, match local files to those in lessons vector
     lessons_local <- list.files(here::here(),
                                 pattern = paste0(lessons, collapse = '|'),
@@ -112,71 +98,64 @@ resolve_lessons <- function(lessons) {
     if(length(lessons_local) != length(lessons)) {
       warning(length(lessons), ' lessons requested, ', length(lessons_local), ' lessons found!')
     }
-  }
-  if(is.data.frame(lessons)) {
+  } else if(is.data.frame(lessons)) {
     ### If data.frame, check that it matches output from compare_diffs():
-    if(any(!names(lessons) %in% c('file_remote', 'file_local', 'result', 'status'))) {
+    if(!all(c('file_local', 'status') %in% names(lessons))) {
       stop('Dataframe input to checkin_lessons() must be output from compare_diffs(),',
-           '\n  looking for column names file_remote, file_local, result, status')
+           '\n  looking for column names file_local and status')
     }
     ### drop any unchanged lessons
     changes <- lessons[lessons$status != 0, ]
     lessons_local <- changes$file_local
+  } else {
+    stop('`lessons` must be NULL, a character vector, or a dataframe from compare_diffs()')
   }
 
   lessons_df <- data.frame(local = lessons_local)
   lessons_df$remote <- stringr::str_remove(basename(lessons_local), '^s[0-9]{2}_')
-  lessons_df$name <- stringr::str_remove(lessons_df$remote, '..md$')
+  lessons_df$name <- stringr::str_remove(lessons_df$remote, '\\.[qQrR]?md$')
 
   return(lessons_df)
 
 }
 
-checkout_tmp <- function(pkg, org, branch) {
+checkout_tmp <- function(pkg, org, branch,
+                         url = sprintf("https://github.com/%s/%s", org, pkg)) {
   ### pkg <- 'lhLessons'; org = 'nceas-learning-hub'
+  ### (url can be overridden, e.g., to a local bare repo for testing)
 
   ### Set up temp folder for lessons repository
   tmp_dir <- tempfile()
   dir.create(tmp_dir)
 
-  ### clone repo into temp folder
-  clone_str <- sprintf("git clone https://github.com/%s/%s %s/%s", org, pkg, tmp_dir, pkg)
-  x <- system(clone_str)
+  ### clean up the temp dir on any failure (not on success, since the caller needs it)
+  success <- FALSE
+  withr::defer(if(!success) unlink(tmp_dir, recursive = TRUE))
 
-  if(x != 0) {
-    x <- system(sprintf('rm -rf %s', tmp_dir))
-    stop('Oops, an error occurred during git clone!')
+  ### clone repo into temp folder (gert errors if the clone fails)
+  clone_dir <- file.path(tmp_dir, pkg)
+  gert::git_clone(url, path = clone_dir, verbose = FALSE)
+
+  ### Check out the branch: use the local branch if it exists; if it only exists
+  ### on origin, create a local branch from it; otherwise create a new branch
+  ### from the current HEAD
+  branches <- gert::git_branch_list(repo = clone_dir)
+  local_branches  <- branches$name[branches$local]
+  remote_branches <- sub('^[^/]+/', '', branches$name[!branches$local])
+  if(branch %in% local_branches) {
+    gert::git_branch_checkout(branch, repo = clone_dir)
+  } else if(branch %in% remote_branches) {
+    gert::git_branch_create(branch, ref = paste0('origin/', branch),
+                            checkout = TRUE, repo = clone_dir)
+  } else {
+    gert::git_branch_create(branch, checkout = TRUE, repo = clone_dir)
   }
 
-  ### Navigate to that dir
-  course_dir <- here::here()
-  setwd(file.path(tmp_dir, pkg))
+  ### Connect local to origin (publishes the branch if it is new)
+  gert::git_push(remote = 'origin', set_upstream = TRUE, repo = clone_dir)
 
-  ### create branch if needed and check out
-  branch_check <- system('git branch -a', intern = TRUE) |>
-    stringr::str_remove('^.+/')
-  b_flag <- ifelse(!branch %in% branch_check, '-b', '')
-  x <- system(sprintf('git checkout %s %s', b_flag, branch))
-
-  if(x != 0) {
-    ### this doesn't work - returns an error:
-    ### /usr/bin/rm: cannot remove 'C:\...\file2b4849cd7c82/lhLessons': Device or resource busy
-    x <- system(sprintf('rm -rf %s', tmp_dir))
-    stop('Oops, an error occurred during git checkout!')
-  }
-
-  ### Connect local to origin
-  x <- system(sprintf('git push -u origin %s', branch))
-  if(x != 0) {
-    ### this doesn't work - returns an error:
-    ### /usr/bin/rm: cannot remove 'C:\...\file2b4849cd7c82/lhLessons': Device or resource busy
-    x <- system(sprintf('rm -rf %s', tmp_dir))
-    stop('Oops, an error occurred during git push -u origin!')
-  }
-
-  ### set back to project home and return temp directory/repo name
-  setwd(course_dir)
-  return(file.path(tmp_dir, pkg))
+  success <- TRUE
+  return(clone_dir)
 
 }
 
@@ -189,9 +168,15 @@ copy_lessons_to_checkin <- function(lessons_df, tmp_dir) {
 
 copy_files_to_checkin <- function(lessons_df, folder, tmp_dir) {
   ### get a list of local folders that match lesson names
-  from_dir <- list.files(here::here(folder), pattern = lessons_df$name, full.names = TRUE)
+  ### (pattern must be a single string, so collapse all lesson names into one regex)
+  from_dir <- list.files(here::here(folder),
+                         pattern = paste0(lessons_df$name, collapse = '|'),
+                         full.names = TRUE)
   to_dir   <- file.path(tmp_dir, 'inst', paste0('lesson_', folder), basename(from_dir))
-  if(length(from_dir) == 0) message('No ', folder, ' folders to be checked in!')
+  if(length(from_dir) == 0) {
+    message('No ', folder, ' folders to be checked in!')
+    return(character(0))
+  }
 
   ### delete existing files; set up new dir if necessary
   x <- lapply(to_dir, function(f) {
@@ -200,13 +185,20 @@ copy_files_to_checkin <- function(lessons_df, folder, tmp_dir) {
       old_fs <- list.files(f, full.names = TRUE, recursive = TRUE)
       unlink(old_fs, recursive = TRUE)
     } else {
-      dir.create(f)
+      dir.create(f, recursive = TRUE)
     }
   })
 
-  ### get indiv files from local and copy to temp dir
-  from_fs <- list.files(from_dir, recursive = TRUE, full.names = TRUE)
-  to_fs <- from_fs |> stringr::str_replace(from_dir, to_dir)
+  ### pair each local file with its destination, one lesson folder at a time
+  ### (so files map to the right folder when there are several lessons)
+  file_map <- lapply(seq_along(from_dir), function(i) {
+    rel <- list.files(from_dir[i], recursive = TRUE)
+    data.frame(from = file.path(from_dir[i], rel),
+               to   = file.path(to_dir[i], rel))
+  }) |>
+    do.call(what = rbind)
+  from_fs <- file_map$from
+  to_fs   <- file_map$to
 
   ### build "to" directory structure
   to_dir_structure <- to_fs |> dirname() |> unique() |> sort()

@@ -1,6 +1,10 @@
 ^coreR\.Rproj$
+^lhCore\.Rproj$
+^TODO\.md$
+^contributing\.md$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
 ^\.positai$
 ^\.claude$
+^logs$

@@ -4,7 +4,12 @@
 \alias{update_lessons}
 \title{Update lessons in a lhCore course}
 \usage{
-update_lessons(lessons = "all", pkg = "lhLessons", version = NULL)
+update_lessons(
+  lessons = "all",
+  pkg = "lhLessons",
+  version = NULL,
+  org = "nceas-learning-hub"
+)
 }
 \arguments{
 \item{lessons}{A vector of specific lessons to be updated, based on file
@@ -19,6 +24,12 @@ those in the source book, will not be updated, even with \code{version = 'all'}.
 \item{version}{A version of the lhCore package from which the updated lessons
 should be pulled.  \code{version} can be given as a commit hash, a tag, a
 version, or a date.}
+
+\item{org}{The GitHub organization where the lessons package repo lives.
+Default "nceas-learning-hub"}
+}
+\value{
+NULL (invisibly)
 }
 \description{
 Update lessons in a lhCore course

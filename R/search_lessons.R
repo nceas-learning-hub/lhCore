@@ -4,9 +4,10 @@
 #' whose YAML `categories` field matches one or more tags. Regular
 #' expressions are allowed in `query`.
 #'
-#' @param query A character string to search across lesson file names in
-#'     the given package. Regular expressions are allowed. If NULL, all
-#'     lessons pass this filter.
+#' @param query A character vector to search across lesson file names in
+#'     the given package. Regular expressions are allowed; if more than one
+#'     string is given, lessons matching any of them are returned. If NULL,
+#'     all lessons pass this filter.
 #' @param tags A character vector of tags to match against each lesson's
 #'     YAML `categories:` field. If NULL, all lessons pass this filter.
 #' @param match When `tags` is provided, whether a lesson must match "any"
@@ -14,6 +15,9 @@
 #' @param pkg The package to query for lesson availability (default `lhLessons`)
 #' @param quiet Provide progress and diagnostic messages during search?
 #'     Default `TRUE`.
+#' @param lib.loc Optional library location of `pkg`, for a non-default
+#'     install (e.g., a temporary library). Default `NULL` uses the standard
+#'     library paths.
 #'
 #' @return A data frame containing the file names (.qmd) of lessons from
 #'     the given package that match the query and/or tags, including a
@@ -26,9 +30,16 @@
 #' search_lessons(tags = c("beginner", "r"), match = "all") # must have both
 #' }
 search_lessons <- function(query = NULL, tags = NULL, pkg = 'lhLessons',
-                           match = c('any', 'all'), quiet = TRUE) {
+                           match = c('any', 'all'), quiet = TRUE, lib.loc = NULL) {
   match <- match.arg(match)
-  v <- utils::packageVersion(pkg) |> paste(collapse = '.')
+
+  ### system.file() returns "" for a missing package/folder, which would
+  ### otherwise look like "no lessons found"; fail clearly instead
+  lessons_dir <- system.file('lessons', package = pkg, lib.loc = lib.loc)
+  if(!nzchar(lessons_dir)) {
+    stop("No 'lessons' folder found for package '", pkg, "'; is it installed?")
+  }
+  v <- utils::packageVersion(pkg, lib.loc = lib.loc) |> paste(collapse = '.')
 
   if(!quiet) {
     msg_bits <- c(
@@ -43,9 +54,10 @@ search_lessons <- function(query = NULL, tags = NULL, pkg = 'lhLessons',
     }
   }
 
-  l_vec <- list.files(system.file('lessons', package = pkg), full.names = TRUE)
+  ### only lesson documents (.qmd/.Rmd/.md), so stray files aren't treated as lessons
+  l_vec <- list.files(lessons_dir, pattern = '\\.[qQrR]?md$', full.names = TRUE)
   l_df  <- data.frame(lesson_file = l_vec,
-                      lesson = stringr::str_remove(basename(l_vec), '\\..md$'))
+                      lesson = stringr::str_remove(basename(l_vec), '\\.[qQrR]?md$'))
 
   ### filename-based filtering
   if(is.null(query)) {

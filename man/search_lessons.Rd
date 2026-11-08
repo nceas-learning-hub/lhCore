@@ -9,13 +9,15 @@ search_lessons(
   tags = NULL,
   pkg = "lhLessons",
   match = c("any", "all"),
-  quiet = TRUE
+  quiet = TRUE,
+  lib.loc = NULL
 )
 }
 \arguments{
-\item{query}{A character string to search across lesson file names in
-the given package. Regular expressions are allowed. If NULL, all
-lessons pass this filter.}
+\item{query}{A character vector to search across lesson file names in
+the given package. Regular expressions are allowed; if more than one
+string is given, lessons matching any of them are returned. If NULL,
+all lessons pass this filter.}
 
 \item{tags}{A character vector of tags to match against each lesson's
 YAML \verb{categories:} field. If NULL, all lessons pass this filter.}
@@ -27,6 +29,10 @@ YAML \verb{categories:} field. If NULL, all lessons pass this filter.}
 
 \item{quiet}{Provide progress and diagnostic messages during search?
 Default \code{TRUE}.}
+
+\item{lib.loc}{Optional library location of \code{pkg}, for a non-default
+install (e.g., a temporary library). Default \code{NULL} uses the standard
+library paths.}
 }
 \value{
 A data frame containing the file names (.qmd) of lessons from

@@ -11,7 +11,7 @@ init_course(
   course_desc = NULL,
   course_dates = NULL,
   setup_github = TRUE,
-  template = c("lh", "adc", "delta", "corer")[1],
+  template = c("lh", "adc", "delta", "corer"),
   package = "lhLessons",
   loc = NULL,
   quiet = TRUE
@@ -28,7 +28,7 @@ will belong.}
 (default), the title will be set the same as the project name.}
 
 \item{course_desc}{A sentence or two describing the course.  If NULL
-(default), will be left empty.}
+(default), will be set the same as the course title.}
 
 \item{course_dates}{The dates of the course (as character, so any preferred format).
 If NULL, will be left empty.}
@@ -50,16 +50,16 @@ just the one lessons package; this is a placeholder for potential future
 functionality allowing for customized lessons packages for other users.}
 
 \item{loc}{The file location where the course repository will be created.
-Default (\code{NULL}) will revert to the current working directory (\code{'.'}) if
-no \code{.Rproj} detected, otherwise will aim for the directory above (\code{'..'}).
-There is a built-in check in \code{usethis::create_project()} that will protect
-further in case you're in nested project territory though.}
+Default (\code{NULL}) is the current working directory (\code{'.'}).  The location
+must not be inside an existing Git repository (this is checked before
+anything is created); if it is, an error is returned and a different
+\code{loc} must be chosen.}
 
 \item{quiet}{Provide progress and diagnostic messages during course initialization?
-Default \code{FALSE}.}
+Default \code{TRUE}.}
 }
 \value{
-stuff
+(invisibly) the full path to the new course project directory
 }
 \description{
 This will set up the basic project structure for a new course: a project
