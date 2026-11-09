@@ -9,59 +9,96 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  eval = FALSE
 )
 ```
 
-# `lhCore` and `lhLessons` packages
+# lhCore
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of these packages is to ...
+`lhCore` builds a Quarto course website from a library of lessons.  The lessons live in a separate lessons package (by default [`lhLessons`](https://github.com/nceas-learning-hub/lhLessons)); `lhCore` provides the functions to set up a course repository, choose and order lessons, keep them in sync with the lessons package, and check changes back in.
+
+For full documentation, guides, and details on the `lhCore` and `lhLessons` packages, see the **lh_packages website**: <https://nceas-learning-hub.github.io/lh_packages/>.
 
 ## Installation
 
-You can install the development version of lhCore from [GitHub](https://github.com/) with:
+Install the development version of `lhCore` from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
 pak::pak("nceas-learning-hub/lhCore")
 ```
 
-## Example
+You will also need the lessons package, [Quarto](https://quarto.org/) on your `PATH`, and Git/GitHub credentials configured if you want `init_course()` to create and publish a GitHub repository.
 
-This is a basic example which shows you how to solve a common problem:
-
-```{r example}
-library(lhCore)
-## basic example code
+```r
+pak::pak("nceas-learning-hub/lhLessons")
 ```
 
-## Notes for development
+## Workflow
 
-Quarto documents can go into a folder called `inst/quarto` or `inst/sections` or the like.  This `inst` folder can have any structure or files inside, but the next level (i.e., `quarto` or `sections`) cannot conflict with any folders in the base level of the package (e.g., `R`, `man`, etc).
+Functions that create or change course files (`init_course()`, `setup_lessons()`, `update_lessons()`, `checkin_lessons()`) are meant to be run by hand in an interactive session, not from a script.  They stop with an error otherwise.
 
-* These can be accessed using `system.file('sections', '<filename>', package = 'lhCore')` and then copied into a local file structure.
+```r
+library(lhCore)
 
-We can use `usethis::create_project(path = "MyNewProject", open = TRUE, rstudio = TRUE)` to create a new bare R project, and then populate with the file structure desired
+### 1. Create the course project, metadata file, and (optionally) the GitHub repo
+init_course(course_proj  = "2026-11-coreR",
+            course_title = "coreR November 2026",
+            course_desc  = "coreR course offered at NCEAS in Nov 2026",
+            course_dates = "Nov. 2 - 6, 2026",
+            template     = "corer")
 
-* fixed structure and files can be copied from `inst/`
-* workshop-specific files (e.g., anything that has the workshop name in it) can be either copied & modified or created from whole cloth
+### 2. Browse the lessons available in the lessons package
+search_lessons()
 
-How to tag the workshop with some info about the version of package used to build it?  metadata in the qmds or yaml header?
+### 3. Install the chosen lessons (in order, optionally grouped into modules)
+setup_lessons(lessons = lhLessons::example_course)
+```
 
-# From NCEAS/nceas-training (update!):
+| Function | Purpose |
+|:---|:---|
+| `init_course()` | Create a course project with `_quarto.yml`, `index.qmd`, theme, `metadata_course.csv`, and optionally the GitHub repo and publishing action. |
+| `search_lessons()` | List and search the lessons (and their tags) in the lessons package. |
+| `setup_lessons()` | Copy chosen lessons and their images, data, slides, and resources into the course; write the lesson list to `_quarto.yml` and `metadata_lessons.csv`. |
+| `compare_diffs()` | Compare local lessons against a fresh install of the lessons package (latest, a branch, or a tag/commit); results go to `git_diff.txt`. |
+| `update_lessons()` | Overwrite local lessons with a requested version from the lessons package. |
+| `checkin_lessons()` | Check modified or new lessons back in to the lessons repository. |
+| `query_lessons_tags()`, `get_lessons_version()` | Look up tags of the lessons repository and the installed lessons version. |
 
-This repository contains lessons used in NCEAS training events. The lessons are all written in RMarkdown and set up so that they build as a bookdown. 
+### Templates
 
-To contribute, see [our contributing document](contributing.md)
+`init_course(template = )` sets the landing page, banner, and logo: `"lh"` (Learning Hub, default), `"adc"` (Arctic Data Center), `"delta"` (Delta Stewardship Council), or `"corer"` (coreR).
 
-## Customizing Materials
+## Caution: destructive functions
 
-To create a custom book for a specific training, create a new branch for the training event (eg 2019-11-RRCourse). In that branch, you can make changes to _bookdown.yml to specify which content to include, and you can modify chapters. The built book should be hosted on another repository specific to that training event, **not** this repository. Please do not commit built versions of the book. Additionally, when adding material please carefully consider file size. PDF presentations should be compressed, and data files, if absolutely necessary, should be small (< 1MB). 
+`setup_lessons(overwrite = TRUE)` and `update_lessons()` permanently replace lesson files and folders in your course, discarding any local edits.  Commit your work to Git first, and run `compare_diffs()` to review how your lessons differ from the lessons package before overwriting.
 
-## Updating Materials
+* `setup_lessons(overwrite = TRUE)` deletes the existing lesson qmds (`sNN_*.qmd`) and matching lesson folders in `images`, `data`, `slides`, and `resources`, and rebuilds the lesson list between the `# START SESSIONS` and `# END SESSIONS` markers in `_quarto.yml`.
+* `update_lessons()` overwrites only lessons whose names match the requested lessons package version; customized lessons with unmatched names are left alone.
 
-Changes to chapters that would be beneficial to other training events should be merged back into the master branch.
+## Course project layout
 
+After `init_course()` and `setup_lessons()`, a course contains:
+
+| Path | Contents |
+|:---|:---|
+| `_quarto.yml` | Site configuration and lesson list. |
+| `index.qmd` | Landing page (edit to describe the course). |
+| `sNN_<lesson>.qmd` | Lesson files, numbered in course order. |
+| `images/`, `data/`, `slides/`, `resources/` | One subfolder per lesson. |
+| `metadata_course.csv` | Course name, organization, title, description, dates. |
+| `metadata_lessons.csv` | Module, lesson, source files, and the lessons package name and version each lesson came from. |
+
+## Citation
+
+``` r
+citation("lhCore")
+```
+
+## Development
+
+Run the tests with `devtools::test()`.  Recent changes are listed in [NEWS.md](NEWS.md); to contribute, see [our contributing document](contributing.md).
