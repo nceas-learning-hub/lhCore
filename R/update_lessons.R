@@ -1,5 +1,13 @@
 #' Update lessons in a lhCore course
 #'
+#' @section Warning:
+#' This function is **destructive**: it overwrites the matching lesson qmd files
+#' and lesson folders in `images`, `data`, `slides`, and `resources` with the
+#' versions from the lessons package, permanently discarding any local edits or
+#' customizations to those lessons.  Use with caution.  Before updating, commit
+#' your work to Git and run `compare_diffs()` to see how your local lessons differ
+#' from the lessons package.
+#'
 #' @param lessons A vector of specific lessons to be updated, based on file
 #'     names (bare or with `.qmd` extension).  If lesson names don't match
 #'     lessons in the source book, an error will be returned.  The default `all`
@@ -7,7 +15,7 @@
 #'     those in the source book.  Customized lessons, whose names do not match
 #'     those in the source book, will not be updated, even with `version = 'all'`.
 #' @param pkg Name of the package where lessons are curated, default "lhLessons"
-#' @param version A version of the lhCore package from which the updated lessons
+#' @param version A version of the `pkg` package from which the updated lessons
 #'     should be pulled.  `version` can be given as a commit hash, a tag, a
 #'     version, or a date.
 #' @param org The GitHub organization where the lessons package repo lives.
@@ -22,6 +30,7 @@
 
 update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
                            org = "nceas-learning-hub") {
+  check_interactive()
   ### placeholder - give a vector of lesson names, optionally give a version tag
   ### if version tag is NULL use latest otherwise use whatever the user supplied
   ### in the `@ref` portion - could be a commit, tag, branch name
@@ -30,11 +39,6 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
   ### if version is not current, install lhLessons from requested version
   ### identify lessons to be updated - which match the names in lhLessons at this version
   ### copy over into sections folder, overwriting old versions
-
-  installed_version <- get_lessons_version(pkg, quiet = TRUE)
-  if(!is.null(version) && installed_version == version) {
-    stop("Requested version (", version, ") is identical to installed version (", installed_version, ")...")
-  }
 
   #####################################################
   ### Set up temporary package with desired version ###
@@ -54,9 +58,19 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
   message('Installing package ', pkg, ' version ',
           if(is.null(version)) '(latest)' else version, ' into temp library...')
   withr::with_libpaths(tmp_lib, action = "prefix", {
-    remotes::install_github(sprintf("%s/%s", org, pkg), ref = version)
+    ### upgrade = "never" avoids prompts about updating other packages
+    remotes::install_github(sprintf("%s/%s", org, pkg), ref = version, upgrade = "never")
   })
-  new_version <- as.character(utils::packageVersion(pkg, lib.loc = tmp_lib))
+  ### the package name at an older tag can differ from the current `pkg` (e.g.,
+  ### v0.0.2 installs as "coreRlessons"), so find what actually landed in tmp_lib
+  pkg_src <- list.files(tmp_lib)
+  if(length(pkg_src) != 1) {
+    stop("Expected exactly one package installed in the temp library from ", org, "/", pkg,
+         " (version ", if(is.null(version)) 'latest' else version, "), found: ",
+         if(length(pkg_src) == 0) "none" else paste(pkg_src, collapse = ", "))
+  }
+  if(pkg_src != pkg) message("Note: this version installs as package '", pkg_src, "', not '", pkg, "'.")
+  new_version <- as.character(utils::packageVersion(pkg_src, lib.loc = tmp_lib))
 
   #################################
   ### Identify desired lessons ###
@@ -65,7 +79,7 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
   ### Identify lessons in current course; lessons available come from the
   ### version just installed in the temp library, not the default library
   lessons_current   <- list.files(here::here(), pattern = "^s[0-9]{2}_.+\\.qmd$")
-  lessons_available <- list.files(system.file("lessons", package = pkg, lib.loc = tmp_lib),
+  lessons_available <- list.files(system.file("lessons", package = pkg_src, lib.loc = tmp_lib),
                                   full.names = TRUE)
 
   l_c_df <- data.frame(current_f = lessons_current)
@@ -80,6 +94,13 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
     ### if any are "all" just update all; if none are "all" then update selected
     ### strip extension just in case
     lessons <- gsub("\\.qmd$", "", lessons)
+    ### error on any requested lesson that isn't both in the course and in the
+    ### source package version (nothing is changed yet)
+    lessons_unmatched <- setdiff(lessons, l_join_df$lesson)
+    if(length(lessons_unmatched) > 0) {
+      stop("Requested lessons not found in both the course and ", pkg, " version ", new_version, ":",
+           paste0("\n\u25CF ", lessons_unmatched))
+    }
     ### filter to just those given lessons
     l_join_df <- l_join_df[l_join_df$lesson %in% lessons, ]
   }
@@ -88,6 +109,26 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
   ### Report matched lessons and copy over ###
   ############################################
   if(nrow(l_join_df) == 0) stop("No valid lessons identified for updating!")
+
+  ### warn if selected lessons are already recorded at this version
+  meta_f <- here::here("metadata_lessons.csv")
+  if(file.exists(meta_f)) {
+    meta_old <- readr::read_csv(meta_f, col_types = readr::cols(.default = "c"))
+    if(all(c("lesson", "pkg_version") %in% names(meta_old))) {
+      already <- unique(l_join_df$lesson[l_join_df$lesson %in%
+                          meta_old$lesson[meta_old$pkg_version %in% new_version]])
+      if(length(already) > 0) {
+        warning("Already recorded at ", pkg, " version ", new_version, " in metadata_lessons.csv",
+                if(length(already) == length(unique(l_join_df$lesson))) " (all selected lessons)" else "",
+                ":", paste0("\n\u2022 ", already), call. = FALSE)
+      }
+    }
+  }
+
+  message("\u26A0\uFE0F WARNING: this will OVERWRITE the lesson files and folders below, ",
+          "permanently discarding any local edits or customizations.",
+          "\n  Commit your work to Git first, and consider running `compare_diffs()` to review ",
+          "your local changes against the lessons package.\n")
   message("Updating lessons to version ", new_version, ":\n  \u2022 ",
           paste(l_join_df$lesson, collapse = "\n  \u2022 "))
 
@@ -108,20 +149,20 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
   ### setup_lessons() and checkin_lessons())
   for(folder in c("images", "data", "slides", "resources")) {
     copy_folders(l_join_df$lesson, from = paste0("lesson_", folder), to = folder,
-                 pkg = pkg, lib.loc = tmp_lib, overwrite = TRUE)
+                 pkg = pkg_src, lib.loc = tmp_lib, overwrite = TRUE)
   }
 
-  # update _quarto.yml with version flags on updated lines
-  yml <- readr::read_file(here::here('_quarto.yml'))
-  for(i in seq_len(nrow(l_join_df))) {
-    updated_f <- l_join_df$current_f[i]
-    ### escape regex metacharacters (e.g., the "." in ".qmd") in the filename
-    old_line <- sprintf("%s  ### .+?\\n", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", updated_f))
-    new_line <- sprintf("%s  ###  (%s version %s)\n", updated_f, pkg, new_version)
-    yml <- sub(old_line, new_line, yml)
+  ### record the new package and version for the updated lessons; read all
+  ### columns as character so versions like "1.0" aren't coerced to numbers
+  if(file.exists(meta_f)) {
+    meta <- readr::read_csv(meta_f, col_types = readr::cols(.default = "c"))
+    is_updated <- meta$lesson %in% l_join_df$lesson
+    meta$package[is_updated]     <- pkg
+    meta$pkg_version[is_updated] <- new_version
+    readr::write_csv(meta, meta_f)
+  } else {
+    warning("metadata_lessons.csv not found; new lesson version (", new_version, ") was not recorded.")
   }
-
-  readr::write_file(yml, here::here('_quarto.yml'))
 
   return(invisible(NULL))
 }

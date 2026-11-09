@@ -27,9 +27,11 @@ if \code{modules} is not NULL, and module names are provided directly in \code{l
 this argument will take precedence.}
 
 \item{overwrite}{If there is already an existing lessons structure, and
-\code{overwrite = FALSE}, will return an error.  Not yet implemented:
-\code{overwrite = TRUE} currently stops with an error asking the user to
-manually delete installed lesson files first.}
+\code{overwrite = FALSE}, will return an error.  If \code{overwrite = TRUE}, after
+confirmation the existing lesson qmd files (\code{sNN_*.qmd}) and the matching
+lesson folders in \code{images}, \code{data}, \code{slides}, and \code{resources} are deleted,
+the lesson list in \verb{_quarto.yml} (between the \verb{# START SESSIONS} and
+\verb{# END SESSIONS} markers) is replaced, and the new lessons are installed.}
 }
 \value{
 NULL (invisibly)
@@ -41,6 +43,16 @@ these and associated materials (images, data) are copied from \code{lhLessons} p
 course project (created with \code{init_course()}).  Sets up the index.qmd, _quarto.yml, and some
 additional files.
 }
+\section{Warning}{
+
+Using \code{overwrite = TRUE} is \strong{destructive}: it permanently deletes the existing
+lesson qmd files and the matching lesson folders in \code{images}, \code{data}, \code{slides},
+and \code{resources} (including any local edits or customizations) and replaces the
+lesson list in \verb{_quarto.yml}.  Use with caution.  Before overwriting, commit
+your work to Git and consider running \code{compare_diffs()} to see how your local
+lessons differ from the lessons package.
+}
+
 \examples{
 \dontrun{
 setup_lessons(lessons = c("activity_reproducibility_lego",

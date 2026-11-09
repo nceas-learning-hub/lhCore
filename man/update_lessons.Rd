@@ -21,7 +21,7 @@ those in the source book, will not be updated, even with \code{version = 'all'}.
 
 \item{pkg}{Name of the package where lessons are curated, default "lhLessons"}
 
-\item{version}{A version of the lhCore package from which the updated lessons
+\item{version}{A version of the \code{pkg} package from which the updated lessons
 should be pulled.  \code{version} can be given as a commit hash, a tag, a
 version, or a date.}
 
@@ -34,6 +34,16 @@ NULL (invisibly)
 \description{
 Update lessons in a lhCore course
 }
+\section{Warning}{
+
+This function is \strong{destructive}: it overwrites the matching lesson qmd files
+and lesson folders in \code{images}, \code{data}, \code{slides}, and \code{resources} with the
+versions from the lessons package, permanently discarding any local edits or
+customizations to those lessons.  Use with caution.  Before updating, commit
+your work to Git and run \code{compare_diffs()} to see how your local lessons differ
+from the lessons package.
+}
+
 \examples{
 # update_lessons(lessons = c("git-github-intro", "r-creating-packages.qmd"),
 #                version = "v0.0.1")

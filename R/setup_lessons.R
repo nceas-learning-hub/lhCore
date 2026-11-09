@@ -6,6 +6,14 @@
 #' course project (created with `init_course()`).  Sets up the index.qmd, _quarto.yml, and some
 #' additional files.
 #'
+#' @section Warning:
+#' Using `overwrite = TRUE` is **destructive**: it permanently deletes the existing
+#' lesson qmd files and the matching lesson folders in `images`, `data`, `slides`,
+#' and `resources` (including any local edits or customizations) and replaces the
+#' lesson list in `_quarto.yml`.  Use with caution.  Before overwriting, commit
+#' your work to Git and consider running `compare_diffs()` to see how your local
+#' lessons differ from the lessons package.
+#'
 #' @param lessons Information on the lessons to be included in the course, as a
 #'     character vector or data.frame.  A character vector containing the names
 #'     (bare or .qmd extension) of the lessons, in order; optionally, a named
@@ -18,9 +26,11 @@
 #'     if `modules` is not NULL, and module names are provided directly in `lessons`,
 #'     this argument will take precedence.
 #' @param overwrite If there is already an existing lessons structure, and
-#'     `overwrite = FALSE`, will return an error.  Not yet implemented:
-#'     `overwrite = TRUE` currently stops with an error asking the user to
-#'     manually delete installed lesson files first.
+#'     `overwrite = FALSE`, will return an error.  If `overwrite = TRUE`, after
+#'     confirmation the existing lesson qmd files (`sNN_*.qmd`) and the matching
+#'     lesson folders in `images`, `data`, `slides`, and `resources` are deleted,
+#'     the lesson list in `_quarto.yml` (between the `# START SESSIONS` and
+#'     `# END SESSIONS` markers) is replaced, and the new lessons are installed.
 #'
 #' @return NULL (invisibly)
 #'
@@ -50,12 +60,7 @@
 #' @export
 
 setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwrite = FALSE) {
-
-  ### overwrite isn't implemented yet; fail before doing any work
-  if(overwrite) {
-    stop("in setup_lessons(), need to add functionality to remove old lessons from _quarto.yml and old files before overwriting!",
-         "\nMeanwhile, manually delete any installed lesson files, then rerun the function with overwrite = FALSE (default) ")
-  }
+  check_interactive()
 
   if(!verify_course_repo(query = 'Set up course lessons here? ')) return(invisible(NULL))
 
@@ -88,6 +93,23 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   if(length(lessons_missing) > 0) stop("Some lessons are not found in the ", package, " package:",
                                        paste0("\n\u25CF ", lessons_missing))
 
+  ### if overwriting, remove the old lesson files and folders first (after
+  ### confirming with the user); the old lesson list in _quarto.yml is reset
+  ### inside setup_quarto_yml()
+  if(overwrite) {
+    ### check _quarto.yml can be reset *before* deleting anything
+    yml_raw <- readr::read_file(here::here("_quarto.yml"))
+    if(!grepl("# START SESSIONS", yml_raw, fixed = TRUE) ||
+       !grepl("# END SESSIONS",   yml_raw, fixed = TRUE)) {
+      stop("_quarto.yml has no '# START SESSIONS' / '# END SESSIONS' markers, ",
+           "so the old lesson list can't be replaced; nothing was removed.")
+    }
+    if(!remove_lessons()) {
+      message("Overwrite cancelled; nothing was changed.")
+      return(invisible(NULL))
+    }
+  }
+
   ### set up _quarto.yml with links to sessions (other info set up in init_course())
   setup_quarto_yml(lessons, modules, overwrite)
 
@@ -105,6 +127,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
                      lesson = lessons) |>
     dplyr::left_join(lessons_copied, by = 'lesson') |>
     dplyr::mutate(package = package, pkg_version = v)
+  ### drop duplicated rows (e.g., repeated lesson entries from the join), then
+  ### sort by output filename; base R avoids a bare column name in R CMD check
+  meta <- meta[!duplicated(meta), ]
+  meta <- meta[order(basename(meta$f_out)), ]
   readr::write_csv(meta, here::here('metadata_lessons.csv'))
 
   message("Course populated with lessons!  Refresh the file pane to see the course files and folders.\n")
@@ -117,6 +143,48 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
 }
 
 ### not exported!
+
+remove_lessons <- function() {
+  ### Remove installed lesson qmds (root-level sNN_<lesson>.qmd) and the
+  ### matching lesson folders in images, data, slides, and resources.
+  ### Lesson names come from the qmd filenames plus metadata_lessons.csv (if
+  ### present).  Lists what will be deleted and asks for confirmation; returns
+  ### TRUE if removal went ahead (or there was nothing to remove), else FALSE.
+  qmd_fs <- list.files(here::here(), pattern = '^s[0-9]{2}_.+\\.qmd$')
+  lessons_old <- sub('^s[0-9]{2}_(.+)\\.qmd$', '\\1', qmd_fs)
+
+  meta_f <- here::here('metadata_lessons.csv')
+  if(file.exists(meta_f)) {
+    meta_old <- readr::read_csv(meta_f, show_col_types = FALSE)
+    lessons_old <- union(lessons_old, meta_old$lesson)
+  }
+
+  folders <- c('images', 'data', 'slides', 'resources')
+  ### relative paths (for display) and full paths (for deletion)
+  dirs_rel <- file.path(rep(folders, each = length(lessons_old)), lessons_old)
+  dirs_rel <- dirs_rel[dir.exists(file.path(here::here(), dirs_rel))]
+  dirs_old <- file.path(here::here(), dirs_rel)
+
+  if(length(qmd_fs) == 0 && length(dirs_old) == 0) {
+    message("No existing lessons found to remove.")
+    return(TRUE)
+  }
+
+  message("\u26A0\uFE0F WARNING: overwrite = TRUE is DESTRUCTIVE and cannot be undone. ",
+          "Any local edits or customizations to these lessons will be permanently lost.",
+          "\n  Commit your work to Git first, and consider running `compare_diffs()` to review ",
+          "how your lessons differ from the lessons package.",
+          "\nThe following existing lesson files and folders will be DELETED:",
+          paste0("\n  \u2022 ", c(qmd_fs, dirs_rel)))
+  ok <- readline("Delete these and rebuild the lessons? (y/n) ")
+  if(tolower(ok) != 'y') return(FALSE)
+
+  unlink(file.path(here::here(), qmd_fs))
+  unlink(dirs_old, recursive = TRUE)
+  message("Removed ", length(qmd_fs), " lesson file(s) and ", length(dirs_old), " lesson folder(s).")
+
+  return(TRUE)
+}
 
 copy_lessons <- function(lessons, from, to = ".", pkg) {
   ### from is the directory to copy lessons from (inside the lessons package);

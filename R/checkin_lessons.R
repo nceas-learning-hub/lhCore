@@ -25,6 +25,7 @@ checkin_lessons <- function(lessons = NULL,
                             pkg = 'lhLessons',
                             org = 'nceas-learning-hub',
                             branch = NULL) {
+  check_interactive()
 
   if(!verify_course_repo(query = 'Check in lessons from this course?')) {
     message('Canceling check in...')

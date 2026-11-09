@@ -57,6 +57,8 @@ init_course <- function(course_proj,
                         package = 'lhLessons',
                         loc = NULL,
                         quiet = TRUE) {
+  check_interactive()
+
   ### validate template up front (first option, 'lh', is the default)
   template <- match.arg(template)
 

@@ -40,3 +40,14 @@
 - `search_lessons()` gained `lib.loc` so it can read a non-default install.
 - `git_diff()`: stderr is no longer captured (on Windows a git line-ending warning was being read as a difference, flagging identical lessons as changed); a missing input file is now an error instead of a false "changed".
 - Tests added to `tests/testthat/test-git_diff.R` for both `git_diff()` fixes.
+
+## 2026-11-08 19:45 PST — setup_lessons(overwrite = TRUE) implemented; interactive-only check; update_lessons()/compare_diffs() fixes; NEWS and CITATION
+
+- `R/setup_lessons.R`: removed the "not implemented" stop. New internal `remove_lessons()` deletes root-level `sNN_*.qmd` and the matching lesson folders in `images`, `data`, `slides`, `resources` (names from the qmd filenames plus `metadata_lessons.csv`) after listing them and asking y/n. `metadata_lessons.csv` is now de-duplicated (`!duplicated()`) and sorted by `basename(f_out)` in base R.
+- `R/helper_functions.R`: `setup_quarto_yml(overwrite = TRUE)` resets the text between `# START SESSIONS` and `# END SESSIONS` to `# SESSION_LINKS` before writing the new list. New `check_interactive()` and `is_interactive()` (wrapper so tests can mock it).
+- `check_interactive()` is called first in `init_course()`, `setup_lessons()`, `update_lessons()` and `checkin_lessons()`. Option `lhCore.allow_noninteractive` bypasses it (set only in `tests/testthat/setup.R`).
+- `R/update_lessons.R`: removed the requested-vs-installed version check and the unused `installed_version`; added `upgrade = "never"` to `install_github()`; errors on requested lessons not in both course and source; records `package`/`pkg_version` in `metadata_lessons.csv`; warns when selected lessons are already at the requested version; removed the no-op `_quarto.yml` version-flag block; uses the package name actually installed in the temp library (`pkg_src`).
+- `R/compare_diffs.R`: same `pkg_src` handling.
+- Destructive-action warnings added to the `setup_lessons()` and `update_lessons()` docs and to their pre-prompt console messages.
+- Tests: added `test-remove_lessons.R`, `test-check_interactive.R`, `setup.R`.
+- Added `NEWS.md` (0.1.0) and `inst/CITATION`. `DESCRIPTION` version is 0.1.0.

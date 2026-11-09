@@ -3,6 +3,20 @@
 ### setup_quarto_yml
 ### check_git_steps
 
+### thin wrapper so tests can mock it (base::interactive() is a primitive and
+### can't be reliably mocked)
+is_interactive <- function() interactive()
+
+check_interactive <- function() {
+  ### exported functions are meant to be run by hand in an interactive session,
+  ### not from a script.  The option is a bypass for automated tests only.
+  if(!is_interactive() && !isTRUE(getOption('lhCore.allow_noninteractive'))) {
+    stop("lhCore functions are meant to be run interactively (e.g., from the R console), ",
+         "not from a script or non-interactive session.", call. = FALSE)
+  }
+  return(invisible(TRUE))
+}
+
 get_course_metadata <- function() {
   ### get metadata from metadata_course.csv
   if(!file.exists('metadata_course.csv')) {
@@ -40,9 +54,18 @@ setup_quarto_yml <- function(lessons, modules, overwrite = FALSE) {
     stop("_quarto.yml: No fields for SESSION_LINKS, and overwrite is FALSE - _quarto.yml file not updated")
   }
 
-  ### if overwrite TRUE and no SESSION_LINKS:
-  ### * replace text between # START_SESSIONS and # END_SESSIONS with # SESSION_LINKS
-  ### * remove the corresponding lesson files
+  ### if overwrite TRUE: reset the old lesson list by replacing everything
+  ### between the START and END SESSIONS markers with a fresh SESSION_LINKS
+  ### placeholder (keeping the markers and their indentation)
+  if(overwrite) {
+    pattern <- "(?s)([ \t]*)# START SESSIONS.*?# END SESSIONS"
+    if(!grepl(pattern, quarto_yml_raw, perl = TRUE)) {
+      stop("_quarto.yml: no '# START SESSIONS' / '# END SESSIONS' markers found - _quarto.yml file not updated")
+    }
+    quarto_yml_raw <- sub(pattern,
+                          "\\1# START SESSIONS\n\\1# SESSION_LINKS\n\\1# END SESSIONS",
+                          quarto_yml_raw, perl = TRUE)
+  }
 
   ### define lesson list
   lesson_txt <- define_lesson_txt(lessons, modules)

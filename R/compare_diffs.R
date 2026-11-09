@@ -73,7 +73,16 @@ compare_diffs <- function(pkg = 'lhLessons',
     remotes::install_github(sprintf('%s/%s', org, pkg), ref = ref,
                             upgrade = 'never', quiet = TRUE)
   })
-  new_version <- as.character(utils::packageVersion(pkg, lib.loc = tmp_lib))
+  ### the package name at an older tag can differ from `pkg` (e.g., v0.0.2
+  ### installs as "coreRlessons"), so find what actually landed in tmp_lib
+  pkg_src <- list.files(tmp_lib)
+  if(length(pkg_src) != 1) {
+    stop('Expected exactly one package installed in the temp library from ', org, '/', pkg,
+         ' (', ref_label, '), found: ',
+         if(length(pkg_src) == 0) 'none' else paste(pkg_src, collapse = ', '))
+  }
+  if(pkg_src != pkg) message("Note: this version installs as package '", pkg_src, "', not '", pkg, "'.")
+  new_version <- as.character(utils::packageVersion(pkg_src, lib.loc = tmp_lib))
   message('Comparing local lessons to ', pkg, ' ', new_version, ' (', ref_label, ')')
 
   ### check *all* local lessons - identified by appropriate prefix (ignore 00)
@@ -89,7 +98,7 @@ compare_diffs <- function(pkg = 'lhLessons',
 
   ### Check local lessons against those in package via search_lessons(),
   ### so any local lessons not in package might indicate new lessons.
-  lessons_avail <- search_lessons(pkg = pkg, lib.loc = tmp_lib)
+  lessons_avail <- search_lessons(pkg = pkg_src, lib.loc = tmp_lib)
 
   ### New lessons: add result, status to match git diff output
   lesson_new <- lessons_df[!lessons_df$bare %in% lessons_avail$lesson, ]

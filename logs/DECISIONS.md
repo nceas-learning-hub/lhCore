@@ -26,3 +26,14 @@ The installed copy of the lessons package can be older than GitHub, which made d
 
 - Trade-off accepted: each call needs network access and a package install (slower; uses `upgrade = "never"` to avoid dependency prompts).
 - `file_remote` in the returned data frame points into the temp library, which is deleted on return.
+
+## 2026-11-08 19:45 PST — Overwrite wipes lesson files and folders; functions that change files are interactive-only
+
+`setup_lessons(overwrite = TRUE)` deletes the existing lesson qmds and matching lesson folders, then rewrites the `_quarto.yml` lesson list between `# START SESSIONS` / `# END SESSIONS`. It checks the markers first and asks for confirmation, so nothing is deleted if the yml can't be reset. Lesson files are identified by the `sNN_` pattern, so hand-made files using that pattern would also be removed (they are listed before the prompt).
+
+- Only functions that change files (`init_course()`, `setup_lessons()`, `update_lessons()`, `checkin_lessons()`) must run interactively. Read-only functions (`search_lessons()`, `get_lessons_version()`, `query_lessons_tags()`, `compare_diffs()`) stay script-friendly. `compare_diffs()` does write `git_diff.txt` but was deliberately left unrestricted.
+- Tests bypass the check with an option rather than mocking `interactive()` (a primitive; the mock had no effect in a non-interactive run), hence the `is_interactive()` wrapper.
+- `update_lessons()` no longer compares the requested version to the installed lessons package: an update always installs the requested version into a temp library, so the installed copy is irrelevant (and the check failed when a course built from an old version was updated with the latest installed). Replaced by a warning when selected lessons are already recorded at that version in `metadata_lessons.csv`.
+- The version is recorded in `metadata_lessons.csv`; the `_quarto.yml` `###` version comments were dropped because `setup_lessons()` never wrote them.
+- Older tags can install under a different package name (`v0.0.2` is `coreRlessons`), so `update_lessons()` and `compare_diffs()` use the name actually found in the temp library.
+- `DESCRIPTION` had `person("O'Hara", "Casey", ...)` (given/family reversed); fixed to `person("Casey", "O'Hara", ...)` to match `inst/CITATION`.
