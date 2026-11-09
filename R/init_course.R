@@ -100,7 +100,7 @@ init_course <- function(course_proj,
 
   ### Add metadata file - overwrite NULLs for title and description
   if(is.null(course_title)) course_title <- course_proj
-  if(is.null(course_desc))  course_desc <- course_title
+  if(is.null(course_desc))  course_desc  <- course_title
   if(is.null(course_dates)) course_dates <- ''
 
   metadata_df <- data.frame(
@@ -193,7 +193,7 @@ setup_course_structure <- function(template,
   ### Any other files in the course_files folder should be copied to the root of the course
   misc_fs <- list.files(system.file("course_files", package = package),
                         full.names = TRUE)
-  misc_fs <- misc_fs[!dir.exists(misc_fs) & !grepl('_quarto_template\\\\.yml|gitignore', basename(misc_fs))]
+  misc_fs <- misc_fs[!dir.exists(misc_fs) & !grepl('_quarto_template\\.yml|gitignore', basename(misc_fs))]
   file.copy(misc_fs, '.')
 
 
@@ -360,6 +360,9 @@ check_repo_path <- function(repo) {
   x <- getwd()
   if(basename(x) != repo) stop('Mismatch between current working directory and repo name!')
   fs <- list.files(x)
-  if(!any(grepl('\\\\.Rproj$', fs))) stop('Current working directory does not contain .Rproj!')
+  ### create_project() writes a .Rproj (rstudio = TRUE) or a .here file (rstudio = FALSE)
+  if(!any(grepl('\\.Rproj$', fs)) && !'.here' %in% list.files(x, all.files = TRUE)) {
+    stop('Current working directory does not look like a project root (no .Rproj or .here)!')
+  }
   return(invisible(TRUE))
 }
