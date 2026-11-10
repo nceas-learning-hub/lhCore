@@ -85,7 +85,7 @@ review how your lessons differ from the lessons package before
 overwriting.
 
 - `setup_lessons(overwrite = TRUE)` deletes the existing lesson qmds
-  (`sNN_*.qmd`) and matching lesson folders in `images`, `data`,
+  (`sNN_*.qmd`) and matching lesson subfolders in `images`, `data`,
   `slides`, and `resources`, and rebuilds the lesson list between the
   `# START SESSIONS` and `# END SESSIONS` markers in `_quarto.yml`.
 - `update_lessons()` overwrites only lessons whose names match the
@@ -101,7 +101,7 @@ After `init_course()` and `setup_lessons()`, a course contains:
 | `_quarto.yml` | Site configuration and lesson list. |
 | `index.qmd` | Landing page (edit to describe the course). |
 | `sNN_<lesson>.qmd` | Lesson files, numbered in course order. |
-| `images/`, `data/`, `slides/`, `resources/` | One subfolder per lesson. |
+| `images/`, `data/`, `slides/`, `resources/` | Asset folders; each contains subfolders named by lesson. |
 | `metadata_course.csv` | Course name, organization, title, description, dates. |
 | `metadata_lessons.csv` | Module, lesson, source files, and the lessons package name and version each lesson came from. |
 

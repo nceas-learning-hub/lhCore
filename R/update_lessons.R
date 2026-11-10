@@ -2,7 +2,7 @@
 #'
 #' @section Warning:
 #' This function is **destructive**: it overwrites the matching lesson qmd files
-#' and lesson folders in `images`, `data`, `slides`, and `resources` with the
+#' and lesson subfolders in `images`, `data`, `slides`, and `resources` with the
 #' versions from the lessons package, permanently discarding any local edits or
 #' customizations to those lessons.  Use with caution.  Before updating, commit
 #' your work to Git and run `compare_diffs()` to see how your local lessons differ
@@ -31,6 +31,7 @@
 update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
                            org = "nceas-learning-hub") {
   check_interactive()
+  check_lhlessons_compatibility(pkg = pkg)
   ### placeholder - give a vector of lesson names, optionally give a version tag
   ### if version tag is NULL use latest otherwise use whatever the user supplied
   ### in the `@ref` portion - could be a commit, tag, branch name
@@ -148,7 +149,7 @@ update_lessons <- function(lessons = "all", pkg = "lhLessons", version = NULL,
   ### update folders (shared with setup_lessons(); resources included, as in
   ### setup_lessons() and checkin_lessons())
   for(folder in c("images", "data", "slides", "resources")) {
-    copy_folders(l_join_df$lesson, from = paste0("lesson_", folder), to = folder,
+    copy_folders(l_join_df$lesson, from = file.path("lessons", folder), to = folder,
                  pkg = pkg_src, lib.loc = tmp_lib, overwrite = TRUE)
   }
 

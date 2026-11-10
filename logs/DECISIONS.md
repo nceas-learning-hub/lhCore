@@ -1,3 +1,16 @@
+## 2026-11-10 15:00 PST — Update lhCore for lhLessons folder restructuring
+
+Reorganized lesson content structure in `lhLessons` from four parallel folders (`lesson_images/`, `lesson_data/`, `lesson_slides/`, `lesson_resources/`) to a nested structure (`lessons/images/`, `lessons/data/`, `lessons/slides/`, `lessons/resources/`), mirroring the final course website structure and eliminating cognitive overhead when working with lesson content.
+
+**Changes to lhCore:**
+- Updated `setup_lessons()`: `from` paths now point to `lessons/images`, `lessons/data`, `lessons/slides`, `lessons/resources` instead of `lesson_*` folders.
+- Updated `update_lessons()`: same folder path changes in the loop that calls `copy_folders()`.
+- Updated `checkin_lessons()` helper `copy_files_to_checkin()`: destination path now uses `inst/lessons/{folder}` instead of `inst/lesson_{folder}`.
+- Updated documentation in all three functions to refer to "lesson subfolders" rather than "lesson folders" for clarity.
+- Verified `search_lessons()` and `query_lessons_tags()` are unaffected (they only reference `lessons/` for `.qmd` files).
+
+**Rationale:** The new structure is self-documenting: navigating to one lesson's folder in `lhLessons` now reveals everything needed for that lesson (its images, data, slides, resources) in organized subfolders, just as they appear in the final course site. The nested approach also enables potential future sharing of assets across lessons without creating parallel-folder confusion.
+
 ## 2026-11-07 19:17 PST — Retire publish_course(); publishing is handled by init_course()
 
 `init_course()` now sets up GitHub and runs `publish_gha()`, which creates and pushes `gh-pages`, copies the GitHub Action and `.gitignore`, and runs `quarto publish gh-pages --no-prompt`, with exit-status checks. `publish_course()` duplicated that with unchecked `system()` git calls, appended a blank line to the user's `index.qmd` to force a commit, and could leave the user on the wrong branch after an error.
@@ -37,3 +50,20 @@ The installed copy of the lessons package can be older than GitHub, which made d
 - The version is recorded in `metadata_lessons.csv`; the `_quarto.yml` `###` version comments were dropped because `setup_lessons()` never wrote them.
 - Older tags can install under a different package name (`v0.0.2` is `coreRlessons`), so `update_lessons()` and `compare_diffs()` use the name actually found in the temp library.
 - `DESCRIPTION` had `person("O'Hara", "Casey", ...)` (given/family reversed); fixed to `person("Casey", "O'Hara", ...)` to match `inst/CITATION`.
+
+## 2026-11-10 15:15 PST — Breaking change: folder structure reorganization and version checks
+
+Reorganized lesson content structure in `lhLessons` from four parallel folders (`lesson_images/`, `lesson_data/`, `lesson_slides/`, `lesson_resources/`) to nested structure (`lessons/images/`, `lessons/data/`, `lessons/slides/`, `lessons/resources/`). This mirrored the course website structure exactly and reduced cognitive overhead.
+
+**Version increments:**
+- lhCore: 0.1.0 → 0.2.0 (breaking change)
+- lhLessons: 2026.11.08 → 2026.11.10 (breaking change)
+
+**Compatibility guarantee:**
+Added `check_lhlessons_compatibility()` to prevent incompatible version pairs:
+- lhCore 0.2.0+ requires lhLessons 2026.11.10+
+- lhCore 0.1.x requires lhLessons 2026.11.08 or earlier
+
+The check runs at the start of `setup_lessons()`, `update_lessons()`, and `search_lessons()` to catch mismatches early with a clear error message.
+
+**Rationale:** The folder restructuring is a breaking change because the paths passed to `copy_folders()` changed fundamentally. A version guard prevents silent failures where old lhCore tries to copy from non-existent `lesson_*` folders, or new lhCore fails because old lhLessons lacks the nested structure.
