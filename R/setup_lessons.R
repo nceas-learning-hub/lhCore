@@ -8,7 +8,7 @@
 #'
 #' @section Warning:
 #' Using `overwrite = TRUE` is **destructive**: it permanently deletes the existing
-#' lesson qmd files and the matching lesson folders in `images`, `data`, `slides`,
+#' lesson qmd files and the matching lesson subfolders in `images`, `data`, `slides`,
 #' and `resources` (including any local edits or customizations) and replaces the
 #' lesson list in `_quarto.yml`.  Use with caution.  Before overwriting, commit
 #' your work to Git and consider running `compare_diffs()` to see how your local
@@ -28,7 +28,7 @@
 #' @param overwrite If there is already an existing lessons structure, and
 #'     `overwrite = FALSE`, will return an error.  If `overwrite = TRUE`, after
 #'     confirmation the existing lesson qmd files (`sNN_*.qmd`) and the matching
-#'     lesson folders in `images`, `data`, `slides`, and `resources` are deleted,
+#'     lesson subfolders in `images`, `data`, `slides`, and `resources` are deleted,
 #'     the lesson list in `_quarto.yml` (between the `# START SESSIONS` and
 #'     `# END SESSIONS` markers) is replaced, and the new lessons are installed.
 #'
@@ -61,6 +61,7 @@
 
 setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwrite = FALSE) {
   check_interactive()
+  check_lhlessons_compatibility(pkg = package)
 
   if(!verify_course_repo(query = 'Set up course lessons here? ')) return(invisible(NULL))
 
@@ -117,10 +118,10 @@ setup_lessons <- function(lessons, package = 'lhLessons', modules = NULL, overwr
   lessons_copied <- copy_lessons(lessons, from = "lessons", to = ".", pkg = package)
 
   ### copy over lesson-associated folders from lessons package to current project: lessons, images, data
-  copy_folders(lessons, from = "lesson_images",    to = "images",    pkg = package)
-  copy_folders(lessons, from = "lesson_data",      to = "data",      pkg = package)
-  copy_folders(lessons, from = "lesson_slides",    to = "slides",    pkg = package)
-  copy_folders(lessons, from = "lesson_resources", to = "resources", pkg = package)
+  copy_folders(lessons, from = "lessons/images",    to = "images",    pkg = package)
+  copy_folders(lessons, from = "lessons/data",      to = "data",      pkg = package)
+  copy_folders(lessons, from = "lessons/slides",    to = "slides",    pkg = package)
+  copy_folders(lessons, from = "lessons/resources", to = "resources", pkg = package)
 
   ### Set up and write out lessons metadata: module, lesson, lesson files, lesson repo, and repo version
   meta <- data.frame(module = if(is.null(modules)) NA_character_ else modules,

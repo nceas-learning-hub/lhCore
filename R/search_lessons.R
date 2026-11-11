@@ -32,6 +32,7 @@
 search_lessons <- function(query = NULL, tags = NULL, pkg = 'lhLessons',
                            match = c('any', 'all'), quiet = TRUE, lib.loc = NULL) {
   match <- match.arg(match)
+  check_lhlessons_compatibility(pkg = pkg, lib.loc = lib.loc)
 
   ### system.file() returns "" for a missing package/folder, which would
   ### otherwise look like "no lessons found"; fail clearly instead

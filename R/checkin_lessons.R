@@ -173,7 +173,7 @@ copy_files_to_checkin <- function(lessons_df, folder, tmp_dir) {
   from_dir <- list.files(here::here(folder),
                          pattern = paste0(lessons_df$name, collapse = '|'),
                          full.names = TRUE)
-  to_dir   <- file.path(tmp_dir, 'inst', paste0('lesson_', folder), basename(from_dir))
+  to_dir   <- file.path(tmp_dir, 'inst', 'lessons', folder, basename(from_dir))
   if(length(from_dir) == 0) {
     message('No ', folder, ' folders to be checked in!')
     return(character(0))

@@ -137,3 +137,42 @@ check_git_steps <- function(quiet = FALSE) {
 
 }
 
+check_lhlessons_compatibility <- function(pkg = 'lhLessons', lib.loc = NULL) {
+  ### Verify that installed lhLessons package is compatible with this version of lhCore.
+  ### As of lhCore 0.2.0 and lhLessons 2026.11.10, the folder structure changed:
+  ### old: inst/lesson_images/, inst/lesson_data/, inst/lesson_slides/, inst/lesson_resources/
+  ### new: inst/lessons/images/, inst/lessons/data/, inst/lessons/slides/, inst/lessons/resources/
+  ### lhCore 0.2.0+ requires lhLessons 2026.11.10+
+  ### lhCore 0.1.x requires lhLessons 2026.11.08 or earlier
+
+  lhcore_version <- utils::packageVersion('lhCore')
+  lhlessons_version <- utils::packageVersion(pkg, lib.loc = lib.loc)
+
+  ### The breaking change: folder restructuring in lhCore 0.2.0 and lhLessons 2026.11.10
+  lhcore_new_folder_version <- utils::package_version('0.2.0')
+  lhlessons_new_folder_version <- utils::package_version('2026.11.10')
+
+  ### Check: if lhCore is new (0.2.0+), lhLessons must also be new (2026.11.10+)
+  if(lhcore_version >= lhcore_new_folder_version &&
+     lhlessons_version < lhlessons_new_folder_version) {
+    stop("Incompatible package versions detected:\n",
+         "  lhCore ", lhcore_version, " (requires lhLessons 2026.11.10 or later)\n",
+         "  lhLessons ", lhlessons_version, " (old folder structure)\n",
+         "Please upgrade lhLessons to 2026.11.10 or later.",
+         call. = FALSE)
+  }
+
+  ### Check: if lhCore is old (pre-0.2.0), lhLessons must also be old (pre-2026.11.10)
+  if(lhcore_version < lhcore_new_folder_version &&
+     lhlessons_version >= lhlessons_new_folder_version) {
+    stop("Incompatible package versions detected:\n",
+         "  lhCore ", lhcore_version, " (old folder structure, incompatible with new lhLessons)\n",
+         "  lhLessons ", lhlessons_version, " (requires lhCore 0.2.0 or later)\n",
+         "Please upgrade lhCore to 0.2.0 or later, or downgrade lhLessons to 2026.11.08 or earlier.",
+         call. = FALSE)
+  }
+
+  return(invisible(TRUE))
+}
+
+
