@@ -20,6 +20,15 @@
 
 ## New features
 
+* `init_course(course_info = )` accepts all of the course information as a one-row data
+  frame (e.g., read from a .csv) or a named list, in place of the individual
+  arguments. Anything missing or `NA` in `course_info` gets its default; unrecognized names
+  and mixing `course_info` with individual arguments are errors.
+
+* New example dataset `test_course`, a one-row data frame of course information
+  in the format accepted by `init_course(course_info = )`. Load it with
+  `data(test_course)`.
+
 * `setup_lessons(overwrite = TRUE)` is now implemented. After confirmation, it
   deletes the existing lesson qmd files (`sNN_*.qmd`) and the matching lesson
   folders in `images`, `data`, `slides` and `resources`, replaces the lesson list

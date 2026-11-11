@@ -8,3 +8,4 @@
 ^\.positai$
 ^\.claude$
 ^logs$
+^data-raw$

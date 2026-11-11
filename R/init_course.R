@@ -34,6 +34,15 @@
 #'     `loc` must be chosen.
 #' @param quiet Provide progress and diagnostic messages during course initialization?
 #'     Default `TRUE`.
+#' @param course_info Optional: all of the course information in one object, to be used
+#'     *instead of* the individual arguments above (e.g., a table you maintain
+#'     as a .csv and read in with your preferred function).  Either a one-row
+#'     data frame whose column names match the argument names, or a named list
+#'     whose names match the argument names.  Any argument not present in `course_info`
+#'     (or `NA` in `course_info`, e.g., a blank .csv cell) gets its default value; `course_proj`
+#'     is required.  Names that are not arguments of this function cause an error,
+#'     and so does supplying individual arguments alongside `course_info`.  `setup_github`
+#'     and `quiet` may be given as `TRUE`/`FALSE` or text such as `"TRUE"`.
 #'
 #' @return (invisibly) the full path to the new course project directory
 #' @export
@@ -41,13 +50,22 @@
 #' @examples
 #' \dontrun{
 #' init_course(course_proj  = "2024-10-coreR",
-#'             course_title = "CoreR October 2024",
+#'             course_title = "CoreR",
 #'             course_desc  = "CoreR course offered at NCEAS in Oct 2024",
 #'             course_dates = "Oct. 6 - 10, 2024")
+#'
+#' ### the same course, from a one-row table (e.g., read from a .csv)
+#' course_df <- data.frame(course_proj  = "2024-10-coreR",
+#'                         course_title = "CoreR",
+#'                         course_desc  = "CoreR course offered at NCEAS in Oct 2024",
+#'                         course_dates = "Oct. 6 - 10, 2024")
+#' init_course(course_info = course_df)
+#' ### or, from a named list
+#' init_course(course_info = list(course_proj = "2024-10-coreR", template = "corer"))
 #' }
 #'
 
-init_course <- function(course_proj,
+init_course <- function(course_proj  = NULL,
                         course_org   = 'nceas-learning-hub',
                         course_title = NULL,
                         course_desc  = NULL,
@@ -56,8 +74,22 @@ init_course <- function(course_proj,
                         template = c('lh', 'adc', 'delta', 'corer'),
                         package = 'lhLessons',
                         loc = NULL,
-                        quiet = TRUE) {
+                        quiet = TRUE,
+                        course_info = NULL) {
   check_interactive()
+
+  ### if course info is given as a data frame or list in `course_info`, use it in place of
+  ### the individual arguments (anything missing from `course_info` keeps its default)
+  if(!is.null(course_info)) {
+    explicit_args <- setdiff(names(as.list(match.call())[-1]), 'course_info')
+    if(length(explicit_args) > 0) {
+      stop("Provide either `course_info` or the individual arguments, not both. ",
+           "Arguments given alongside `course_info`: ", paste(explicit_args, collapse = ', '))
+    }
+    info_vals <- parse_init_args(course_info)
+    for(arg in names(info_vals)) assign(arg, info_vals[[arg]])
+  }
+  if(is.null(course_proj)) stop("`course_proj` is required (as an argument or in `course_info`).")
 
   ### validate template up front (first option, 'lh', is the default)
   template <- match.arg(template)
@@ -140,6 +172,52 @@ init_course <- function(course_proj,
 ################################
 ###     Helper functions     ###
 ################################
+
+parse_init_args <- function(course_info) {
+  ### validate course info supplied as a one-row data frame or a named list, and
+  ### return a named list of the arguments actually supplied (NA/NULL = not supplied)
+  arg_names <- c('course_proj', 'course_org', 'course_title', 'course_desc',
+                 'course_dates', 'setup_github', 'template', 'package', 'loc', 'quiet')
+
+  if(is.data.frame(course_info)) {
+    if(nrow(course_info) != 1) stop("`course_info` as a data frame must have exactly one row (found ", nrow(course_info), ").")
+    course_info <- as.list(course_info)
+  } else if(is.character(course_info) && length(course_info) == 1 && is.null(names(course_info))) {
+    stop("`course_info` must be a data frame or a named list. ",
+         "To give the project name directly, use `course_proj = \"", course_info, "\"`.")
+  } else if(!is.list(course_info)) {
+    stop("`course_info` must be a data frame or a named list.",
+         if(is.character(course_info) && length(course_info) == 1) "\n  To give just the project name, use `course_proj = `." else "")
+  }
+  if(length(course_info) == 0 || is.null(names(course_info)) || any(!nzchar(names(course_info)))) {
+    stop("`course_info` must have names (column names or list names) matching the arguments of init_course().")
+  }
+
+  unknown <- setdiff(names(course_info), arg_names)
+  if(length(unknown) > 0) {
+    stop("Unrecognized name(s) in `course_info`: ", paste(unknown, collapse = ', '),
+         "\n  Allowed: ", paste(arg_names, collapse = ', '))
+  }
+  if(anyDuplicated(names(course_info))) stop("Duplicated names in `course_info`: ",
+                                   paste(unique(names(course_info)[duplicated(names(course_info))]), collapse = ', '))
+
+  bad_len <- names(course_info)[lengths(course_info) > 1]
+  if(length(bad_len) > 0) stop("Each element of `course_info` must be a single value; not so for: ",
+                               paste(bad_len, collapse = ', '))
+
+  ### drop empty (NULL) and NA values so those arguments keep their defaults
+  course_info <- course_info[lengths(course_info) == 1]
+  course_info <- course_info[!vapply(course_info, function(v) is.na(v), logical(1))]
+
+  ### coerce types, since values read from a .csv may arrive as text
+  for(nm in intersect(names(course_info), c('setup_github', 'quiet'))) {
+    course_info[[nm]] <- as.logical(course_info[[nm]])
+    if(is.na(course_info[[nm]])) stop("`", nm, "` in `course_info` must be TRUE or FALSE.")
+  }
+  for(nm in setdiff(names(course_info), c('setup_github', 'quiet'))) course_info[[nm]] <- as.character(course_info[[nm]])
+
+  return(course_info)
+}
 
 setup_course_structure <- function(template,
                                    package,

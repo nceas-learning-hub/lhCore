@@ -5,7 +5,7 @@
 \title{Initialize a lhCore course}
 \usage{
 init_course(
-  course_proj,
+  course_proj = NULL,
   course_org = "nceas-learning-hub",
   course_title = NULL,
   course_desc = NULL,
@@ -14,7 +14,8 @@ init_course(
   template = c("lh", "adc", "delta", "corer"),
   package = "lhLessons",
   loc = NULL,
-  quiet = TRUE
+  quiet = TRUE,
+  course_info = NULL
 )
 }
 \arguments{
@@ -57,6 +58,16 @@ anything is created); if it is, an error is returned and a different
 
 \item{quiet}{Provide progress and diagnostic messages during course initialization?
 Default \code{TRUE}.}
+
+\item{course_info}{Optional: all of the course information in one object, to be used
+\emph{instead of} the individual arguments above (e.g., a table you maintain
+as a .csv and read in with your preferred function).  Either a one-row
+data frame whose column names match the argument names, or a named list
+whose names match the argument names.  Any argument not present in \code{course_info}
+(or \code{NA} in \code{course_info}, e.g., a blank .csv cell) gets its default value; \code{course_proj}
+is required.  Names that are not arguments of this function cause an error,
+and so does supplying individual arguments alongside \code{course_info}.  \code{setup_github}
+and \code{quiet} may be given as \code{TRUE}/\code{FALSE} or text such as \code{"TRUE"}.}
 }
 \value{
 (invisibly) the full path to the new course project directory
@@ -69,9 +80,18 @@ file will be used to help populate details in later functions.
 \examples{
 \dontrun{
 init_course(course_proj  = "2024-10-coreR",
-            course_title = "CoreR October 2024",
+            course_title = "CoreR",
             course_desc  = "CoreR course offered at NCEAS in Oct 2024",
             course_dates = "Oct. 6 - 10, 2024")
+
+### the same course, from a one-row table (e.g., read from a .csv)
+course_df <- data.frame(course_proj  = "2024-10-coreR",
+                        course_title = "CoreR",
+                        course_desc  = "CoreR course offered at NCEAS in Oct 2024",
+                        course_dates = "Oct. 6 - 10, 2024")
+init_course(course_info = course_df)
+### or, from a named list
+init_course(course_info = list(course_proj = "2024-10-coreR", template = "corer"))
 }
 
 }

@@ -73,6 +73,10 @@ setup_lessons(lessons = lhLessons::example_course)
 
 `init_course(template = )` sets the landing page, banner, and logo: `"lh"` (Learning Hub, default), `"adc"` (Arctic Data Center), `"delta"` (Delta Stewardship Council), or `"corer"` (coreR).
 
+### Example course information
+
+`init_course(course_info = )` accepts all of the course information as a one-row data frame or named list.  An example is included as the dataset `test_course`, available via `data(test_course)`.
+
 ## Caution: destructive functions
 
 `setup_lessons(overwrite = TRUE)` and `update_lessons()` permanently replace lesson files and folders in your course, discarding any local edits.  Commit your work to Git first, and run `compare_diffs()` to review how your lessons differ from the lessons package before overwriting.

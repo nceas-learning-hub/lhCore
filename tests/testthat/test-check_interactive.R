@@ -7,7 +7,7 @@ test_that("exported functions throw an error when run non-interactively", {
 
   expect_error(check_interactive(), "interactively")
   expect_error(setup_lessons("x"), "interactively")
-  expect_error(init_course("x"), "interactively")
+  expect_error(init_course(course_proj = "x"), "interactively")
   expect_error(update_lessons(), "interactively")
   expect_error(checkin_lessons(), "interactively")
 })

@@ -76,6 +76,12 @@ setup_lessons(lessons = lhLessons::example_course)
 `"lh"` (Learning Hub, default), `"adc"` (Arctic Data Center), `"delta"`
 (Delta Stewardship Council), or `"corer"` (coreR).
 
+### Example course information
+
+`init_course(course_info = )` accepts all of the course information as a
+one-row data frame or named list. An example is included as the dataset
+`test_course`, available via `data(test_course)`.
+
 ## Caution: destructive functions
 
 `setup_lessons(overwrite = TRUE)` and `update_lessons()` permanently

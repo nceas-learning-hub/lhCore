@@ -7,7 +7,7 @@
 #' Lessons can be provided as a character vector of the lesson file names (with or without
 #' the prefix/extension ornamentation), or as a dataframe resulting from a call to
 #' `compare_diffs()`.  Files copied include the lesson .qmd files, plus any associated
-#' image/data/slides folders.
+#' image/data/slides/resources folders.
 #'
 #' Commits then pushes changes back to Github
 #'
